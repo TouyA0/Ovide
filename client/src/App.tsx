@@ -30,7 +30,7 @@ type ModalState =
   | { kind: 'add'; accId: string }
   | { kind: 'transfer'; accId: string }
   | { kind: 'edit'; tx: Transaction }
-  | { kind: 'account'; memberId?: string }
+  | { kind: 'account'; memberId: string }
   | { kind: 'edit-account'; accId: string }
   | { kind: 'archive-account'; accId: string }
   | { kind: 'member' }
