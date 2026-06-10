@@ -17,6 +17,76 @@ import exportRouter from './routes/export';
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+// Création du schéma initial (idempotent — IF NOT EXISTS)
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS members (
+    id TEXT PRIMARY KEY,
+    nom TEXT NOT NULL,
+    couleur TEXT NOT NULL,
+    initiales TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT 'CURRENT_TIMESTAMP'
+  );
+  CREATE TABLE IF NOT EXISTS categories (
+    id TEXT PRIMARY KEY,
+    nom TEXT NOT NULL,
+    icone TEXT NOT NULL,
+    hue INTEGER NOT NULL DEFAULT 60,
+    type TEXT NOT NULL DEFAULT 'expense'
+  );
+  CREATE TABLE IF NOT EXISTS accounts (
+    id TEXT PRIMARY KEY,
+    member_id TEXT NOT NULL REFERENCES members(id),
+    nom TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'courant',
+    banque TEXT,
+    solde_initial REAL NOT NULL DEFAULT 0,
+    previsions_activees INTEGER NOT NULL DEFAULT 0,
+    archive INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT 'CURRENT_TIMESTAMP'
+  );
+  CREATE TABLE IF NOT EXISTS transactions (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES accounts(id),
+    type TEXT NOT NULL,
+    montant REAL NOT NULL,
+    categorie_id TEXT REFERENCES categories(id),
+    libelle TEXT NOT NULL DEFAULT '',
+    date TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    transfer_id TEXT,
+    dir TEXT,
+    recurrence_id TEXT,
+    import_id TEXT,
+    receipt_path TEXT,
+    created_at TEXT NOT NULL DEFAULT 'CURRENT_TIMESTAMP'
+  );
+  CREATE TABLE IF NOT EXISTS recurrences (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES accounts(id),
+    montant REAL NOT NULL,
+    sens TEXT NOT NULL,
+    categorie_id TEXT REFERENCES categories(id),
+    jour_du_mois INTEGER NOT NULL,
+    libelle TEXT NOT NULL DEFAULT '',
+    note TEXT NOT NULL DEFAULT '',
+    position INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT '2000-01-01'
+  );
+  CREATE TABLE IF NOT EXISTS imports (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    bank_name TEXT NOT NULL,
+    imported_at TEXT NOT NULL,
+    transaction_count INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS recurrence_skips (
+    id TEXT PRIMARY KEY,
+    recurrence_id TEXT NOT NULL,
+    month_prefix TEXT NOT NULL
+  );
+`);
+
 // Migrations légères au démarrage (colonnes ajoutées après le seed initial)
 try { sqlite.exec('ALTER TABLE accounts ADD COLUMN banque TEXT'); } catch { /* déjà présente */ }
 try { sqlite.exec('ALTER TABLE transactions ADD COLUMN recurrence_id TEXT'); } catch { /* déjà présente */ }
