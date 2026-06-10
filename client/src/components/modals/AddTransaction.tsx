@@ -1,0 +1,111 @@
+import { useState, useEffect, useRef } from 'react';
+import { Minus, Plus } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
+import { Modal } from './Modal';
+import { today } from '../../utils/format';
+import type { Account, Member, Category } from '../../api/client';
+
+interface Props {
+  accounts: Account[];
+  members: Member[];
+  categories: Category[];
+  defaultAccountId: string;
+  onClose: () => void;
+  onSave: (data: {
+    accountId: string; type: 'expense' | 'income';
+    montant: number; categorieId: string; libelle: string; date: string; note: string;
+  }) => void;
+}
+
+const INCOME_CATS = ['c_salaire', 'c_revenus', 'c_divers'];
+
+export function AddTransactionModal({ accounts, members, categories, defaultAccountId, onClose, onSave }: Props) {
+  const [type, setType] = useState<'expense' | 'income'>('expense');
+  const [amount, setAmount] = useState('');
+  const [catId, setCatId] = useState<string | null>(null);
+  const [libelle, setLibelle] = useState('');
+  const [date, setDate] = useState(today());
+  const [accId, setAccId] = useState(defaultAccountId || accounts[0]?.id);
+  const amountRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { const t = setTimeout(() => amountRef.current?.focus(), 80); return () => clearTimeout(t); }, []);
+
+  const shownCats = type === 'income'
+    ? categories.filter(c => INCOME_CATS.includes(c.id))
+    : categories.filter(c => !['c_salaire', 'c_revenus'].includes(c.id));
+
+  const parsedAmount = parseFloat(amount.replace(',', '.'));
+  const valid = parsedAmount > 0 && !!catId;
+
+  const submit = () => {
+    if (!valid || !catId) return;
+    onSave({ accountId: accId, type, montant: Math.abs(parsedAmount), categorieId: catId, libelle: libelle.trim(), date, note: '' });
+  };
+
+  const onAmountKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') { e.preventDefault(); (document.getElementById('cat-grid') as HTMLElement)?.querySelector('button')?.focus(); }
+  };
+
+  return (
+    <Modal title="Nouvelle opération" onClose={onClose}>
+      <div className="modal-body">
+        <div className="type-toggle">
+          <button className={`type-opt exp${type === 'expense' ? ' on' : ''}`} onClick={() => setType('expense')}>
+            <span className="t-ic" style={{ background: type === 'expense' ? 'var(--neg)' : 'var(--surface-2)', color: type === 'expense' ? '#fff' : 'var(--text-3)' }}><Minus size={17} strokeWidth={2.6} /></span>
+            Dépense
+          </button>
+          <button className={`type-opt inc${type === 'income' ? ' on' : ''}`} onClick={() => { setType('income'); if (!INCOME_CATS.includes(catId ?? '')) setCatId(null); }}>
+            <span className="t-ic" style={{ background: type === 'income' ? 'var(--pos)' : 'var(--surface-2)', color: type === 'income' ? '#fff' : 'var(--text-3)' }}><Plus size={17} strokeWidth={2.6} /></span>
+            Entrée
+          </button>
+        </div>
+
+        <div className="amount-field">
+          <input ref={amountRef} className={`amount-input ${type}`} inputMode="decimal" placeholder="0,00"
+            value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.,]/g, ''))} onKeyDown={onAmountKey} aria-label="Montant" />
+          <span className="cur">€</span>
+        </div>
+
+        <div className="field-label">Catégorie</div>
+        <div className="chip-grid" id="cat-grid">
+          {shownCats.map(c => {
+            const IconComp = (LucideIcons as Record<string, React.ComponentType<{ size?: number }>>)[
+              c.icone.split('-').map((s, i) => i === 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s.charAt(0).toUpperCase() + s.slice(1)).join('')
+            ];
+            return (
+              <button key={c.id} className={`chip${catId === c.id ? ' on' : ''}`} onClick={() => setCatId(c.id)}>
+                <span className="c-ic" style={{ background: catId === c.id ? `oklch(0.6 0.12 ${c.hue})` : `oklch(0.6 0.12 ${c.hue} / 0.14)`, color: catId === c.id ? '#fff' : `oklch(0.5 0.13 ${c.hue})` }}>
+                  {IconComp ? <IconComp size={14} /> : null}
+                </span>
+                <span className="chip-name">{c.nom}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="field-label">Détails</div>
+        <div className="field">
+          <input className="input" placeholder="Libellé (optionnel)" value={libelle} onChange={e => setLibelle(e.target.value)} />
+        </div>
+        <div className="row2" style={{ marginTop: 10 }}>
+          <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} aria-label="Date" />
+          <select className="selectx" value={accId} onChange={e => setAccId(e.target.value)} aria-label="Compte">
+            {members.map(m => (
+              <optgroup key={m.id} label={m.nom}>
+                {accounts.filter(a => a.memberId === m.id).map(a => (
+                  <option key={a.id} value={a.id}>{m.nom} · {a.nom}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="modal-foot">
+        <button className="btn ghost" onClick={onClose}>Annuler</button>
+        <button className="btn primary" disabled={!valid} onClick={submit}>
+          Ajouter {valid ? (type === 'expense' ? '−' : '+') + parsedAmount.toFixed(2).replace('.', ',') + ' €' : ''}
+        </button>
+      </div>
+    </Modal>
+  );
+}
