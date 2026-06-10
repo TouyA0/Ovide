@@ -197,7 +197,20 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   width: 3px; height: 18px; border-radius: 3px; background: var(--accent);
 }
 .account-dot { width: 8px; height: 8px; border-radius: 3px; flex: 0 0 auto; }
-.account-name { font-size: 13.5px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.account-name { font-size: 13.5px; font-weight: 600; flex: 1; min-width: 0; position: relative; overflow: hidden; }
+.acc-label-main,
+.acc-label-sub {
+  display: block;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.acc-label-sub {
+  position: absolute; inset: 0;
+  opacity: 0; transform: translateY(3px);
+  font-size: 12px; font-weight: 500; color: var(--text-2);
+}
+.account-item:hover .acc-label-main { opacity: 0; transform: translateY(-3px); }
+.account-item:hover .acc-label-sub  { opacity: 1; transform: translateY(0); }
 .account-bal { font-size: 12.5px; font-weight: 600; color: var(--text-3); }
 .account-item.active .account-bal { color: var(--text-2); }
 

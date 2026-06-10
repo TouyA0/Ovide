@@ -57,7 +57,10 @@ export function Sidebar({ members, accounts, activeId, onOpen, onContext, onMemb
                       onClick={() => onOpen(a.id)}
                       onContextMenu={e => { e.preventDefault(); onContext(e.clientX, e.clientY, a.id); }}>
                       <i className="account-dot" style={{ background: a.type === 'epargne' ? 'oklch(0.6 0.02 70)' : `var(--m-${m.couleur})` }} />
-                      <span className="account-name">{a.nom}</span>
+                      <span className="account-name">
+                        <span className="acc-label-main">{a.nom}</span>
+                        <span className="acc-label-sub">{(() => { const t = a.type === 'epargne' ? 'Épargne' : a.type === 'courant' ? 'Courant' : 'Autre'; return a.banque ? `${t} — ${a.banque}` : t; })()}</span>
+                      </span>
                       <span className="account-bal tnum">{fmtEurShort(a.balance)}</span>
                     </button>
                   ))}
