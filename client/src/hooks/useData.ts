@@ -133,6 +133,26 @@ export function useDeleteTransaction() {
   });
 }
 
+export function useUploadReceipt() {
+  const qc = useQueryClient();
+  const onError = useOnError();
+  return useMutation({
+    mutationFn: ({ txId, file }: { txId: string; file: File }) => api.uploadReceipt(txId, file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['transactions'] }),
+    onError,
+  });
+}
+
+export function useDeleteReceipt() {
+  const qc = useQueryClient();
+  const onError = useOnError();
+  return useMutation({
+    mutationFn: (txId: string) => api.deleteReceipt(txId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['transactions'] }),
+    onError,
+  });
+}
+
 export function useCreateTransfer() {
   const qc = useQueryClient();
   const onError = useOnError();

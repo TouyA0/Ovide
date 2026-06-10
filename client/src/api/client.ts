@@ -52,6 +52,16 @@ export const api = {
   skipRecurrence: (id: string, monthPrefix: string) => request('/recurrences/' + id + '/skip', { method: 'POST', body: JSON.stringify({ monthPrefix }) }),
   unskipRecurrence: (id: string, monthPrefix: string) => request('/recurrences/' + id + '/skip?monthPrefix=' + monthPrefix, { method: 'DELETE' }),
 
+  // Receipts
+  uploadReceipt: async (txId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE}/transactions/${txId}/receipt`, { method: 'POST', body: formData });
+    if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error((b as { error?: string }).error ?? `HTTP ${res.status}`); }
+    return res.json() as Promise<{ receiptPath: string }>;
+  },
+  deleteReceipt: (txId: string) => request(`/transactions/${txId}/receipt`, { method: 'DELETE' }),
+
   // Imports
   getImports: (accountId: string) => request<BankImport[]>('/imports?accountId=' + accountId),
   createImport: (data: { accountId: string; filename: string; bankName: string; txs: { date: string; libelle: string; montant: number; type: 'income' | 'expense' }[] }) =>
@@ -115,6 +125,7 @@ export interface Transaction {
   dir: 'in' | 'out' | null;
   recurrenceId: string | null;
   linkedAccountId: string | null;
+  receiptPath: string | null;
 }
 
 export interface Recurrence {

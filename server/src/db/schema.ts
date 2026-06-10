@@ -41,6 +41,7 @@ export const transactions = sqliteTable('transactions', {
   dir: text('dir'), // 'in' | 'out' — pour les virements
   recurrenceId: text('recurrence_id'),
   importId: text('import_id'),
+  receiptPath: text('receipt_path'), // nom du fichier dans uploads/receipts/
   createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
 });
 

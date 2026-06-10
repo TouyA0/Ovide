@@ -41,6 +41,11 @@ try { sqlite.exec(`CREATE TABLE IF NOT EXISTS recurrence_skips (
   recurrence_id TEXT NOT NULL,
   month_prefix TEXT NOT NULL
 )`); } catch { /* déjà présente */ }
+try { sqlite.exec('ALTER TABLE transactions ADD COLUMN receipt_path TEXT'); } catch { /* déjà présente */ }
+
+// Répertoire de stockage des pièces jointes
+export const uploadsDir = path.join(__dirname, '..', '..', 'uploads', 'receipts');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 app.use(express.json());
 
@@ -58,6 +63,14 @@ app.use('/api/imports', importsRouter);
 app.use('/api/parse-bank-file', parseBankFileRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/export', exportRouter);
+
+// Sert les pièces jointes (derrière le middleware d'auth)
+app.get('/api/receipts/:filename', (req, res) => {
+  const filename = path.basename(req.params.filename); // protection path traversal
+  const filePath = path.join(uploadsDir, filename);
+  if (!fs.existsSync(filePath)) { res.status(404).json({ error: 'Fichier introuvable' }); return; }
+  res.sendFile(filePath);
+});
 
 // Sert le build React en production (ignoré en dev si le dossier n'existe pas)
 const clientDist = path.join(__dirname, '..', 'public');

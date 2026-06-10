@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, ArrowLeftRight, Eye, EyeOff, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock, GripVertical, Upload, Trash2, FileText, Loader2, ChevronLeft, ChevronRight, Ban } from 'lucide-react';
+import { Plus, ArrowLeftRight, Eye, EyeOff, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock, GripVertical, Upload, Trash2, FileText, Loader2, ChevronLeft, ChevronRight, Ban, Paperclip } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { BalanceChart } from '../charts/BalanceChart';
 import { IncomeExpenseBars } from '../charts/IncomeExpenseBars';
@@ -589,6 +589,11 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
                     style={isTr ? { color: t.dir === 'in' ? 'var(--pos)' : 'var(--text-2)' } : {}}>
                     {t.type === 'income' ? '+' : t.type === 'expense' ? '−' : (t.dir === 'in' ? '+' : '−')}{fmtEur(t.montant)}
                   </span>
+                  {t.receiptPath && (
+                    <span className="tx-receipt-badge" title="Pièce jointe">
+                      <Paperclip size={12} />
+                    </span>
+                  )}
                   {t.recurrenceId && (
                     <button
                       className="tx-cancel-rec"

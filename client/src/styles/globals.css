@@ -426,6 +426,35 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .overdue-skip-btn:hover:not(:disabled) { color: var(--neg); border-color: var(--neg); }
 .overdue-skip-btn.overdue-skip-confirm { color: var(--neg); border-color: var(--neg); }
 
+/* ── Pièce jointe ── */
+.receipt-upload-btn {
+  width: 100%; border-style: dashed; color: var(--text-3);
+  justify-content: center; gap: 8px; padding: 10px;
+}
+.receipt-upload-btn:hover { color: var(--text); border-color: var(--accent); }
+.receipt-preview {
+  display: flex; align-items: center; gap: 12px; padding: 8px 12px;
+  border: 1.5px solid var(--line); border-radius: var(--r-md); background: var(--surface-2);
+  min-height: 0;
+}
+.receipt-thumb-link { flex-shrink: 0; }
+.receipt-thumb {
+  width: 48px; height: 48px; object-fit: cover; border-radius: 6px;
+  border: 1px solid var(--line); display: block;
+}
+.receipt-file-link {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 4px 6px; border-radius: 6px; color: var(--text-2);
+  text-decoration: none; font-size: 12px;
+}
+.receipt-file-link span { font-weight: 500; }
+.receipt-file-link:hover { background: var(--surface); color: var(--text); }
+.receipt-actions { display: flex; flex-direction: row; gap: 6px; margin-left: auto; flex-shrink: 0; }
+.tx-receipt-badge {
+  display: inline-flex; align-items: center; color: var(--text-3);
+  flex-shrink: 0; opacity: 0.7;
+}
+
 .tx-cancel-rec {
   flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; border: none;
   background: var(--surface-2); color: var(--text-3); display: grid; place-items: center; cursor: pointer;
