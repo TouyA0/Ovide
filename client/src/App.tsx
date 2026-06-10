@@ -10,13 +10,16 @@ import { AddTransactionModal } from './components/modals/AddTransaction';
 import { TransferModal } from './components/modals/Transfer';
 import { EditTransactionModal } from './components/modals/EditTransaction';
 import { AccountFormModal } from './components/modals/AccountForm';
+import { AccountEditModal } from './components/modals/AccountEditModal';
 import { MemberFormModal } from './components/modals/MemberForm';
+import { Modal } from './components/modals/Modal';
 import { Toasts, useToasts } from './components/ui/Toast';
 import { useLayout } from './store/useLayout';
 import {
   useMembers, useAccounts, useCategories,
   useCreateTransaction, useUpdateTransaction, useDeleteTransaction,
-  useCreateTransfer, useTogglePrevisions, useCreateAccount, useCreateMember,
+  useCreateTransfer, useTogglePrevisions, useCreateAccount, useUpdateAccount,
+  useArchiveAccount, useCreateMember,
 } from './hooks/useData';
 import type { Transaction, ForecastItem } from './api/client';
 
@@ -25,6 +28,8 @@ type ModalState =
   | { kind: 'transfer'; accId: string }
   | { kind: 'edit'; tx: Transaction }
   | { kind: 'account'; memberId?: string }
+  | { kind: 'edit-account'; accId: string }
+  | { kind: 'archive-account'; accId: string }
   | { kind: 'member' }
   | null;
 
@@ -66,6 +71,8 @@ export default function App() {
   const createTransfer = useCreateTransfer();
   const togglePrev = useTogglePrevisions();
   const createAccount = useCreateAccount();
+  const updateAccount = useUpdateAccount();
+  const archiveAccount = useArchiveAccount();
   const createMember = useCreateMember();
 
   const handleAddTx = async (data: Parameters<typeof createTx.mutateAsync>[0]) => {
@@ -109,6 +116,19 @@ export default function App() {
     setModal(null);
   };
 
+  const handleEditAccount = async (accId: string, data: { nom: string; type: 'courant' | 'epargne' | 'autre' }) => {
+    await updateAccount.mutateAsync({ id: accId, data });
+    pushToast('Compte mis à jour');
+    setModal(null);
+  };
+
+  const handleArchiveAccount = async (accId: string) => {
+    await archiveAccount.mutateAsync({ id: accId, archive: true });
+    layout.closeTab(accId);
+    pushToast('Compte archivé', 'archive');
+    setModal(null);
+  };
+
   const handleCreateMember = async (data: Parameters<typeof createMember.mutateAsync>[0]) => {
     await createMember.mutateAsync(data);
     pushToast('Membre ajouté');
@@ -117,9 +137,7 @@ export default function App() {
 
   const handleExport = (accId: string) => {
     const acc = accounts.find(a => a.id === accId);
-    const member = members.find(m => m.id === acc?.memberId);
-    if (acc && member) {
-      // Use CSV export URL from API directly
+    if (acc) {
       window.location.href = `/api/export/${accId}/csv`;
       pushToast('Export CSV téléchargé', 'download');
     }
@@ -131,9 +149,9 @@ export default function App() {
     { icon: <Columns2 size={16} />, label: 'Ouvrir dans la vue scindée', fn: () => layout.openInSplit(accId) },
     { sep: true },
     { icon: <Download size={16} />, label: 'Exporter en CSV', fn: () => handleExport(accId) },
-    { icon: <PenLine size={16} />, label: 'Renommer', fn: () => pushToast('Renommer (bientôt disponible)', 'info') },
+    { icon: <PenLine size={16} />, label: 'Renommer', fn: () => setModal({ kind: 'edit-account', accId }) },
     { sep: true },
-    { icon: <Archive size={16} />, label: 'Archiver le compte', danger: true, fn: () => pushToast('Archiver (bientôt disponible)', 'info') },
+    { icon: <Archive size={16} />, label: 'Archiver le compte', danger: true, fn: () => setModal({ kind: 'archive-account', accId }) },
   ];
 
   const newTab = () => {
@@ -162,6 +180,11 @@ export default function App() {
 
   const activePaneProps = paneProps(activeAccount);
   const splitPaneProps = paneProps(splitAccount);
+
+  // Compte ciblé par les modals d'édition / archivage
+  const editTargetAccount = modal?.kind === 'edit-account' || modal?.kind === 'archive-account'
+    ? accounts.find(a => a.id === modal.accId)
+    : null;
 
   return (
     <div className="app-shell">
@@ -229,6 +252,32 @@ export default function App() {
       {modal?.kind === 'account' && (
         <AccountFormModal members={members} defaultMemberId={modal.memberId}
           onClose={() => setModal(null)} onSave={handleCreateAccount} />
+      )}
+      {modal?.kind === 'edit-account' && editTargetAccount && (
+        <AccountEditModal
+          account={editTargetAccount}
+          onClose={() => setModal(null)}
+          onSave={data => handleEditAccount(modal.accId, data)}
+        />
+      )}
+      {modal?.kind === 'archive-account' && editTargetAccount && (
+        <Modal title="Archiver le compte" onClose={() => setModal(null)}>
+          <div className="modal-body">
+            <p style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>
+              Archiver <strong>{editTargetAccount.nom}</strong> ? Le compte n'apparaîtra
+              plus dans la sidebar et ne pourra plus recevoir de nouvelles transactions.
+            </p>
+            <p style={{ color: 'var(--text-3)', fontSize: 13, marginTop: 8 }}>
+              Les transactions existantes restent accessibles via l'export CSV.
+            </p>
+          </div>
+          <div className="modal-foot">
+            <button className="btn ghost" onClick={() => setModal(null)}>Annuler</button>
+            <button className="btn danger" onClick={() => handleArchiveAccount(modal.accId)}>
+              <Archive size={15} /> Archiver
+            </button>
+          </div>
+        </Modal>
       )}
       {modal?.kind === 'member' && (
         <MemberFormModal onClose={() => setModal(null)} onSave={handleCreateMember} />
