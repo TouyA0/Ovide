@@ -121,7 +121,6 @@ export default function App() {
 
   const handleTogglePrev = async (id: string) => {
     await togglePrev.mutateAsync(id);
-    pushToast('Prévisions mises à jour', 'info');
   };
 
   const handleCreateAccount = async (data: Parameters<typeof createAccount.mutateAsync>[0]) => {
