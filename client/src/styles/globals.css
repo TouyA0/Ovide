@@ -420,6 +420,17 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 [data-theme="dark"] .scrim { background: oklch(0 0 0 / 0.6); }
 @keyframes fade { from { opacity: 0; } }
+@keyframes shimmer { from { background-position: -200% center; } to { background-position: 200% center; } }
+.sk {
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--line) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+.sk-text { height: 13px; }
+.sk-title { height: 18px; }
+.sk-val { height: 26px; }
+.sk-block { border-radius: var(--r-md); }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin .7s linear infinite; display: inline-flex; }

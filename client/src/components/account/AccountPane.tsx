@@ -128,10 +128,21 @@ function StatsSection({ account, member, categories }: { account: Account; membe
     { label: 'Dépenses', icon: <ArrowUpRight size={14} />, cur: cur.expense, prev: prev.expense, neg: true },
   ];
 
+  const cmpLoading = !cmp.data;
+  const balLoading = !balSeries.data;
+  const barsLoading = !bars.data;
+  const donutLoading = !donutRaw.data;
+
   return (
     <div className="grid" style={{ gridTemplateColumns: '1fr', gap: 16 }}>
       <div className="cmp-grid">
-        {cards.map((c, i) => {
+        {cmpLoading ? [0, 1, 2].map(i => (
+          <div className="cmp" key={i}>
+            <div className="sk sk-text" style={{ width: '60%', marginBottom: 10 }} />
+            <div className="sk sk-val" style={{ width: '80%', marginBottom: 8 }} />
+            <div className="sk sk-text" style={{ width: '70%' }} />
+          </div>
+        )) : cards.map((c, i) => {
           const d = pctDelta(c.cur, c.prev);
           const better = c.neg ? d <= 0 : d >= 0;
           return (
@@ -162,13 +173,9 @@ function StatsSection({ account, member, categories }: { account: Account; membe
             <button className={range === 'annee' ? 'on' : ''} onClick={() => setRange('annee')}>12 mois</button>
           </div>
         </div>
-        {balSeries.data && (
-          <BalanceChart
-            series={balSeries.data.series}
-            projection={balSeries.data.projection}
-            accentVar={accentVar}
-          />
-        )}
+        {balLoading
+          ? <div className="sk sk-block" style={{ height: 140 }} />
+          : <BalanceChart series={balSeries.data!.series} projection={balSeries.data!.projection} accentVar={accentVar} />}
       </div>
 
       <div className="grid charts-2" style={{ gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -177,16 +184,32 @@ function StatsSection({ account, member, categories }: { account: Account; membe
             <div className="card-title">Entrées vs dépenses</div>
             <div className="card-sub">{range === 'annee' ? '12 mois' : '6 mois'}</div>
           </div>
-          {bars.data && <IncomeExpenseBars data={bars.data} />}
+          {barsLoading
+            ? <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 100, padding: '0 4px' }}>
+                {[55, 80, 40, 70, 90, 60].map((h, i) => (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <div className="sk sk-block" style={{ height: h * 0.5 }} />
+                    <div className="sk sk-block" style={{ height: h * 0.7 }} />
+                  </div>
+                ))}
+              </div>
+            : <IncomeExpenseBars data={bars.data!} />}
         </div>
         <div className="card">
           <div className="card-head">
             <div className="card-title">Répartition</div>
             <div className="card-sub">{monthName}</div>
           </div>
-          {donutSlices.length > 0
-            ? <CategoryDonut slices={donutSlices} />
-            : <div className="empty" style={{ padding: '28px 10px' }}>Aucune dépense ce mois-ci.</div>}
+          {donutLoading
+            ? <div style={{ display: 'flex', gap: 18, alignItems: 'center', padding: '8px 0' }}>
+                <div className="sk sk-block" style={{ width: 130, height: 130, borderRadius: '50%', flexShrink: 0 }} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[70, 55, 45].map((w, i) => <div key={i} className="sk sk-text" style={{ width: `${w}%` }} />)}
+                </div>
+              </div>
+            : donutSlices.length > 0
+              ? <CategoryDonut slices={donutSlices} />
+              : <div className="empty" style={{ padding: '28px 10px' }}>Aucune dépense ce mois-ci.</div>}
         </div>
       </div>
     </div>
@@ -371,8 +394,28 @@ function TransactionList({ account, categories, onEdit, onDelete, onConfirmForec
         </div>
       )}
 
+      {/* Skeleton loading */}
+      {!txQuery.data && (
+        <div className="tx-list" style={{ marginTop: 8 }}>
+          {[1, 0.9, 0.75, 1, 0.6, 0.85].map((op, i) => (
+            <div className="tx-row" key={i} style={{ opacity: op, pointerEvents: 'none' }}>
+              <span className="tx-stamp">
+                <div className="sk" style={{ width: 22, height: 18, borderRadius: 4, marginBottom: 3 }} />
+                <div className="sk" style={{ width: 22, height: 11, borderRadius: 4 }} />
+              </span>
+              <span className="tx-ico sk" style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0 }} />
+              <div className="tx-body" style={{ gap: 6 }}>
+                <div className="sk sk-text" style={{ width: `${40 + (i * 17) % 40}%` }} />
+                <div className="sk sk-text" style={{ width: `${25 + (i * 11) % 25}%`, height: 11 }} />
+              </div>
+              <div className="sk sk-text" style={{ width: 52, marginLeft: 'auto' }} />
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Empty state */}
-      {groups.length === 0 && (
+      {txQuery.data && groups.length === 0 && (
         <div className="empty">
           <div className="e-ic"><span style={{ fontSize: 22 }}>🧾</span></div>
           {hasActiveFilters ? 'Aucun résultat pour ces filtres.' : 'Aucune transaction pour le moment.'}
