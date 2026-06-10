@@ -87,6 +87,11 @@ export function RecurrenceFormModal({ recurrence, accountId, categories, isPendi
             {jourNum >= 1 && jourNum <= 31 ? `Le ${jourNum} de chaque mois` : 'Entre 1 et 31'}
           </span>
         </div>
+        {jourNum >= 29 && jourNum <= 31 && (
+          <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-3)' }}>
+            Les mois sans le jour {jourNum}, l'opération sera prévue le dernier jour du mois.
+          </p>
+        )}
       </div>
 
       <div className="modal-foot" style={{ flexDirection: 'column', gap: 10 }}>
