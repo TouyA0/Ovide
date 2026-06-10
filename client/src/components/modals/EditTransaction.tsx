@@ -23,6 +23,7 @@ export function EditTransactionModal({ tx, categories, accounts: _accounts, memb
   const [libelle, setLibelle] = useState(tx.libelle);
   const [date, setDate] = useState(tx.date);
   const [type, setType] = useState<'expense' | 'income'>(tx.type === 'transfer' ? 'expense' : tx.type);
+  const [note, setNote] = useState(tx.note ?? '');
   const [confirmDel, setConfirmDel] = useState(false);
 
   const shownCats = type === 'income' ? categories.filter(c => INCOME_CATS.includes(c.id)) : categories.filter(c => !['c_salaire', 'c_revenus'].includes(c.id));
@@ -73,12 +74,16 @@ export function EditTransactionModal({ tx, categories, accounts: _accounts, memb
         <div className="field-label">Détails</div>
         <div className="field"><input className="input" placeholder="Libellé" value={libelle} onChange={e => setLibelle(e.target.value)} /></div>
         <div className="field" style={{ marginTop: 10 }}><input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+        <div className="field" style={{ marginTop: 10 }}>
+          <textarea className="input" placeholder="Note (optionnelle)" value={note} onChange={e => setNote(e.target.value)}
+            rows={2} style={{ resize: 'none', lineHeight: 1.5 }} />
+        </div>
       </div>
       <div className="modal-foot" style={{ flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', gap: 10, width: '100%' }}>
           <button className="btn ghost" onClick={onClose} style={{ flex: 1 }}>Annuler</button>
           <button className="btn primary" disabled={!valid} style={{ flex: 1 }}
-            onClick={() => onSave({ ...tx, type: isTransfer ? tx.type : type, montant: Math.abs(parsed), categorieId: catId, libelle: libelle.trim(), date })}>
+            onClick={() => onSave({ ...tx, type: isTransfer ? tx.type : type, montant: Math.abs(parsed), categorieId: catId, libelle: libelle.trim(), date, note: note.trim() })}>
             Enregistrer
           </button>
         </div>
