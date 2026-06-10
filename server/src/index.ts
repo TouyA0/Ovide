@@ -23,6 +23,9 @@ try { sqlite.exec('ALTER TABLE transactions ADD COLUMN recurrence_id TEXT'); } c
 try { sqlite.exec("ALTER TABLE recurrences ADD COLUMN note TEXT NOT NULL DEFAULT ''"); } catch { /* déjà présente */ }
 try { sqlite.exec('ALTER TABLE recurrences ADD COLUMN position INTEGER NOT NULL DEFAULT 0'); } catch { /* déjà présente */ }
 try { sqlite.exec('ALTER TABLE transactions ADD COLUMN import_id TEXT'); } catch { /* déjà présente */ }
+try { sqlite.exec("ALTER TABLE categories ADD COLUMN type TEXT NOT NULL DEFAULT 'expense'"); } catch { /* déjà présente */ }
+// Marquer les catégories d'entrées connues si elles existent encore
+try { sqlite.exec("UPDATE categories SET type='income' WHERE id IN ('c_salaire','c_revenus')"); } catch { /* */ }
 try { sqlite.exec(`CREATE TABLE IF NOT EXISTS imports (
   id TEXT PRIMARY KEY,
   account_id TEXT NOT NULL,

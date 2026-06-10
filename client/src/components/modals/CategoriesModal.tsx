@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Check, X, ArrowLeft, Search, Loader2 } from 'lucide-react';
+import { Plus as PlusIcon, Minus, Pencil, Trash2, Check, X, ArrowLeft, Search, Loader2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import type { ComponentType } from 'react';
 import { Modal } from './Modal';
@@ -214,22 +214,26 @@ function IconPicker({ value, hue, onChange }: { value: string; hue: number; onCh
 // ── Main component ────────────────────────────────────────────────
 export function CategoriesModal({ categories, isPending, onClose, onCreate, onUpdate, onDelete }: Props) {
   const [view, setView] = useState<ViewMode>('list');
+  const [tab, setTab] = useState<'expense' | 'income'>('expense');
   const [editing, setEditing] = useState<Category | null>(null);
 
   const [nom, setNom] = useState('');
   const [icone, setIcone] = useState('tag');
   const [hue, setHue] = useState(220);
+  const [catType, setCatType] = useState<'expense' | 'income'>('expense');
   const [confirmDel, setConfirmDel] = useState(false);
 
   const nomRef = useRef<HTMLInputElement>(null);
 
   const openNew = () => {
-    setEditing(null); setNom(''); setIcone('tag'); setHue(220); setConfirmDel(false);
+    setEditing(null); setNom(''); setIcone('tag'); setHue(220);
+    setCatType(tab); setConfirmDel(false);
     setView('edit');
   };
 
   const openEdit = (cat: Category) => {
-    setEditing(cat); setNom(cat.nom); setIcone(cat.icone); setHue(cat.hue); setConfirmDel(false);
+    setEditing(cat); setNom(cat.nom); setIcone(cat.icone); setHue(cat.hue);
+    setCatType(cat.type ?? 'expense'); setConfirmDel(false);
     setView('edit');
   };
 
@@ -244,7 +248,7 @@ export function CategoriesModal({ categories, isPending, onClose, onCreate, onUp
 
   const handleSave = () => {
     if (!valid) return;
-    const data = { nom: nom.trim(), icone: icone.trim(), hue };
+    const data = { nom: nom.trim(), icone: icone.trim(), hue, type: catType };
     if (editing) onUpdate(editing.id, data);
     else onCreate(data);
     backToList();
@@ -258,27 +262,40 @@ export function CategoriesModal({ categories, isPending, onClose, onCreate, onUp
 
   // ── List view ─────────────────────────────────────────────────────
   if (view === 'list') {
+    const shown = categories.filter(c => (c.type ?? 'expense') === tab);
     return (
       <Modal title="Catégories" onClose={onClose}>
+        {/* Onglets Dépenses / Entrées */}
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', padding: '0 20px' }}>
+          {(['expense', 'income'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '10px 14px', fontWeight: 600, fontSize: 13,
+                color: tab === t ? 'var(--text-1)' : 'var(--text-3)',
+                borderBottom: tab === t ? '2px solid var(--accent)' : '2px solid transparent',
+                marginBottom: -1, transition: 'color 0.15s',
+              }}
+            >
+              {t === 'expense' ? 'Dépenses' : 'Entrées'}
+            </button>
+          ))}
+        </div>
+
         <div className="modal-body" style={{ padding: 0 }}>
-          {categories.length === 0 ? (
+          {shown.length === 0 ? (
             <p style={{ padding: '20px 24px', color: 'var(--text-3)', fontSize: 14 }}>
-              Aucune catégorie. Créez-en une !
+              Aucune catégorie {tab === 'expense' ? 'de dépense' : "d'entrée"}. Créez-en une !
             </p>
           ) : (
             <ul style={{ listStyle: 'none', margin: 0, padding: '8px 0' }}>
-              {categories.map(cat => (
-                <li key={cat.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '9px 20px',
-                }}>
+              {shown.map(cat => (
+                <li key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 20px' }}>
                   <CategoryIcon name={cat.icone} hue={cat.hue} />
                   <span style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{cat.nom}</span>
-                  <button
-                    className="btn ghost"
-                    style={{ padding: '4px 10px', fontSize: 12 }}
-                    onClick={() => openEdit(cat)}
-                  >
+                  <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => openEdit(cat)}>
                     <Pencil size={13} /> Modifier
                   </button>
                 </li>
@@ -289,7 +306,7 @@ export function CategoriesModal({ categories, isPending, onClose, onCreate, onUp
         <div className="modal-foot">
           <button className="btn ghost" onClick={onClose}>Fermer</button>
           <button className="btn primary" onClick={openNew}>
-            <Plus size={15} /> Nouvelle catégorie
+            <PlusIcon size={15} /> Nouvelle catégorie
           </button>
         </div>
       </Modal>
@@ -311,6 +328,25 @@ export function CategoriesModal({ categories, isPending, onClose, onCreate, onUp
           {!IconComp && icone.length > 0 && (
             <span style={{ marginLeft: 'auto', color: 'var(--neg)', fontSize: 12 }}>Icône introuvable</span>
           )}
+        </div>
+
+        {/* Type */}
+        <div className="field-label">Type</div>
+        <div className="type-toggle" style={{ marginBottom: 14 }}>
+          <button className={`type-opt exp${catType === 'expense' ? ' on' : ''}`} onClick={() => setCatType('expense')}
+            style={{ flex: 1 }}>
+            <span className="t-ic" style={{ background: catType === 'expense' ? 'var(--neg)' : 'var(--surface-2)', color: catType === 'expense' ? '#fff' : 'var(--text-3)' }}>
+              <Minus size={15} strokeWidth={2.6} />
+            </span>
+            Dépense
+          </button>
+          <button className={`type-opt inc${catType === 'income' ? ' on' : ''}`} onClick={() => setCatType('income')}
+            style={{ flex: 1 }}>
+            <span className="t-ic" style={{ background: catType === 'income' ? 'var(--pos)' : 'var(--surface-2)', color: catType === 'income' ? '#fff' : 'var(--text-3)' }}>
+              <PlusIcon size={15} strokeWidth={2.6} />
+            </span>
+            Entrée
+          </button>
         </div>
 
         {/* Nom */}

@@ -1,8 +1,6 @@
 import * as LucideIcons from 'lucide-react';
 import type { Category } from '../../api/client';
 
-const INCOME_CATS = ['c_salaire', 'c_revenus', 'c_divers'];
-
 interface Props {
   categories: Category[];
   selected: string | null;
@@ -15,14 +13,12 @@ function toIconName(icone: string) {
 }
 
 export function CategoryPicker({ categories, selected, onChange, filter = 'all' }: Props) {
-  const shown = filter === 'income'
-    ? categories.filter(c => INCOME_CATS.includes(c.id))
-    : filter === 'expense'
-    ? categories.filter(c => !['c_salaire', 'c_revenus'].includes(c.id))
-    : categories;
+  const shown = filter === 'all'
+    ? categories
+    : categories.filter(c => c.type === filter);
 
   return (
-    <div className="chip-grid">
+    <div className="chip-grid" id="cat-grid">
       {shown.map(c => {
         const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[toIconName(c.icone)];
         const on = selected === c.id;
@@ -42,6 +38,11 @@ export function CategoryPicker({ categories, selected, onChange, filter = 'all' 
           </button>
         );
       })}
+      {shown.length === 0 && (
+        <span style={{ fontSize: 13, color: 'var(--text-3)', padding: '4px 2px' }}>
+          Aucune catégorie — créez-en une dans Paramètres.
+        </span>
+      )}
     </div>
   );
 }

@@ -97,6 +97,7 @@ export interface Category {
   nom: string;
   icone: string;
   hue: number;
+  type: 'expense' | 'income';
 }
 
 export interface Transaction {
