@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  WalletMinimal, Signal, Wifi, BatteryFull,
-  LayoutDashboard, BarChart3, Repeat, Settings,
-  Monitor, Sun, Moon, Plus,
-  MousePointer2, PenLine, Columns2, Download, Archive,
+  Plus, MousePointer2, PenLine, Columns2, Download, Archive,
 } from 'lucide-react';
 import { Sidebar } from './components/layout/Sidebar';
 import { TabBar } from './components/layout/TabBar';
@@ -16,9 +13,8 @@ import { AccountFormModal } from './components/modals/AccountForm';
 import { MemberFormModal } from './components/modals/MemberForm';
 import { Toasts, useToasts } from './components/ui/Toast';
 import { useLayout } from './store/useLayout';
-import { exportCSV } from './utils/csv';
 import {
-  useMembers, useAccounts, useCategories, useRecurrences,
+  useMembers, useAccounts, useCategories,
   useCreateTransaction, useUpdateTransaction, useDeleteTransaction,
   useCreateTransfer, useTogglePrevisions, useCreateAccount, useCreateMember,
 } from './hooks/useData';
@@ -36,6 +32,8 @@ type CtxState = { x: number; y: number; accId: string } | null;
 
 export default function App() {
   const layout = useLayout();
+  const initTabs = useLayout(s => s.initTabs);
+  const tabsLength = useLayout(s => s.tabs.length);
   const { items: toasts, push: pushToast } = useToasts();
   const [modal, setModal] = useState<ModalState>(null);
   const [ctx, setCtx] = useState<CtxState>(null);
@@ -56,10 +54,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (accounts.length && layout.tabs.length === 0) {
-      layout.initTabs(accounts.slice(0, 2).map(a => a.id));
+    if (accounts.length && tabsLength === 0) {
+      initTabs(accounts.slice(0, 2).map(a => a.id));
     }
-  }, [accounts, layout]);
+  }, [accounts, tabsLength, initTabs]);
 
   // Mutations
   const createTx = useCreateTransaction();

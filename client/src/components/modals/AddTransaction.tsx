@@ -69,7 +69,7 @@ export function AddTransactionModal({ accounts, members, categories, defaultAcco
         <div className="field-label">Catégorie</div>
         <div className="chip-grid" id="cat-grid">
           {shownCats.map(c => {
-            const IconComp = (LucideIcons as Record<string, React.ComponentType<{ size?: number }>>)[
+            const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
               c.icone.split('-').map((s, i) => i === 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s.charAt(0).toUpperCase() + s.slice(1)).join('')
             ];
             return (

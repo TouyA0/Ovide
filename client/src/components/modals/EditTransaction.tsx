@@ -54,7 +54,7 @@ export function EditTransactionModal({ tx, categories, accounts: _accounts, memb
             <div className="field-label">Catégorie</div>
             <div className="chip-grid">
               {shownCats.map(c => {
-                const IconComp = (LucideIcons as Record<string, React.ComponentType<{ size?: number }>>)[
+                const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
                   c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
                 ];
                 return (

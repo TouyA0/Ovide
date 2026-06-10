@@ -1,4 +1,4 @@
-import { Columns2, Smartphone, Sun, Moon, Plus, X, Download } from 'lucide-react';
+import { Columns2, Sun, Moon, Plus, X, Download } from 'lucide-react';
 import type { Account, Member } from '../../api/client';
 
 interface Props {

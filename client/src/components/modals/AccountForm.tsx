@@ -6,13 +6,13 @@ interface Props {
   members: Member[];
   defaultMemberId?: string;
   onClose: () => void;
-  onSave: (data: { memberId: string; nom: string; type: string; soldeInitial: number }) => void;
+  onSave: (data: { memberId: string; nom: string; type: 'courant' | 'epargne' | 'autre'; soldeInitial: number }) => void;
 }
 
 export function AccountFormModal({ members, defaultMemberId, onClose, onSave }: Props) {
   const [memberId, setMemberId] = useState(defaultMemberId ?? members[0]?.id ?? '');
   const [nom, setNom] = useState('');
-  const [type, setType] = useState('courant');
+  const [type, setType] = useState<'courant' | 'epargne' | 'autre'>('courant');
   const [solde, setSolde] = useState('');
 
   const valid = !!nom.trim() && !!memberId;
@@ -29,7 +29,7 @@ export function AccountFormModal({ members, defaultMemberId, onClose, onSave }: 
         <input className="input field" placeholder="Ex. Compte courant" value={nom} onChange={e => setNom(e.target.value)} />
 
         <div className="field-label" style={{ marginTop: 12 }}>Type</div>
-        <select className="selectx field" value={type} onChange={e => setType(e.target.value)}>
+        <select className="selectx field" value={type} onChange={e => setType(e.target.value as 'courant' | 'epargne' | 'autre')}>
           <option value="courant">Courant</option>
           <option value="epargne">Épargne</option>
           <option value="autre">Autre</option>

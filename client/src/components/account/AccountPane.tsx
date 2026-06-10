@@ -228,7 +228,7 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
           <div className="tx-list">
             {forecast.map(f => {
               const c = f.categorieId ? catMap[f.categorieId] : null;
-              const IconComp = c ? (LucideIcons as Record<string, React.ComponentType<{ size?: number }>>)[
+              const IconComp = c ? (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
                 c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
               ] : null;
               return (
@@ -271,7 +271,7 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
                 const c = t.categorieId ? catMap[t.categorieId] : null;
                 const isTr = t.type === 'transfer';
                 const hue = c?.hue ?? 250;
-                const IconComp = c ? (LucideIcons as Record<string, React.ComponentType<{ size?: number }>>)[
+                const IconComp = c ? (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
                   c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
                 ] : null;
                 return (
