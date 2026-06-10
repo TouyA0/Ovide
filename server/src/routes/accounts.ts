@@ -20,7 +20,7 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { memberId, nom, type, soldeInitial } = req.body;
+  const { memberId, nom, type, banque, soldeInitial } = req.body;
   if (!memberId || !nom) { res.status(400).json({ error: 'memberId et nom requis' }); return; }
 
   const member = db.select().from(members).where(eq(members.id, memberId)).get();
@@ -30,6 +30,7 @@ router.post('/', (req, res) => {
   db.insert(accounts).values({
     id, memberId, nom,
     type: type ?? 'courant',
+    banque: banque ?? null,
     soldeInitial: soldeInitial ?? 0,
     previsionsActivees: type === 'courant',
     archive: false,
@@ -38,8 +39,8 @@ router.post('/', (req, res) => {
 });
 
 router.put('/:id', (req, res) => {
-  const { nom, type, soldeInitial, previsionsActivees } = req.body;
-  db.update(accounts).set({ nom, type, soldeInitial, previsionsActivees }).where(eq(accounts.id, req.params.id)).run();
+  const { nom, type, banque, soldeInitial, previsionsActivees } = req.body;
+  db.update(accounts).set({ nom, type, banque: banque ?? null, soldeInitial, previsionsActivees }).where(eq(accounts.id, req.params.id)).run();
   res.json({ ok: true });
 });
 

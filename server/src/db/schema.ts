@@ -13,6 +13,7 @@ export const accounts = sqliteTable('accounts', {
   memberId: text('member_id').notNull().references(() => members.id),
   nom: text('nom').notNull(),
   type: text('type').notNull().default('courant'), // 'courant' | 'epargne' | 'autre'
+  banque: text('banque'), // nom de la banque (optionnel)
   soldeInitial: real('solde_initial').notNull().default(0),
   previsionsActivees: integer('previsions_activees', { mode: 'boolean' }).notNull().default(false),
   archive: integer('archive', { mode: 'boolean' }).notNull().default(false),

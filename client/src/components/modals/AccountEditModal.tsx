@@ -5,19 +5,25 @@ import type { Account } from '../../api/client';
 interface Props {
   account: Account;
   onClose: () => void;
-  onSave: (data: { nom: string; type: 'courant' | 'epargne' | 'autre' }) => void;
+  onSave: (data: { nom: string; type: 'courant' | 'epargne' | 'autre'; banque: string | null }) => void;
 }
 
 export function AccountEditModal({ account, onClose, onSave }: Props) {
   const [nom, setNom] = useState(account.nom);
   const [type, setType] = useState<'courant' | 'epargne' | 'autre'>(account.type);
+  const [banque, setBanque] = useState(account.banque ?? '');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.select();
   }, []);
 
-  const valid = !!nom.trim() && nom.trim() !== account.nom || type !== account.type;
+  const hasChanged =
+    nom.trim() !== account.nom ||
+    type !== account.type ||
+    (banque.trim() || null) !== account.banque;
+
+  const valid = !!nom.trim() && hasChanged;
 
   return (
     <Modal title="Modifier le compte" onClose={onClose}>
@@ -28,7 +34,7 @@ export function AccountEditModal({ account, onClose, onSave }: Props) {
           className="input field"
           value={nom}
           onChange={e => setNom(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && valid) onSave({ nom: nom.trim(), type }); }}
+          onKeyDown={e => { if (e.key === 'Enter' && valid) onSave({ nom: nom.trim(), type, banque: banque.trim() || null }); }}
         />
         <div className="field-label" style={{ marginTop: 12 }}>Type</div>
         <select
@@ -40,11 +46,20 @@ export function AccountEditModal({ account, onClose, onSave }: Props) {
           <option value="epargne">Épargne</option>
           <option value="autre">Autre</option>
         </select>
+        <div className="field-label" style={{ marginTop: 12 }}>
+          Banque <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optionnel)</span>
+        </div>
+        <input
+          className="input field"
+          placeholder="Ex. Crédit Agricole"
+          value={banque}
+          onChange={e => setBanque(e.target.value)}
+        />
       </div>
       <div className="modal-foot">
         <button className="btn ghost" onClick={onClose}>Annuler</button>
         <button className="btn primary" disabled={!valid}
-          onClick={() => onSave({ nom: nom.trim(), type })}>
+          onClick={() => onSave({ nom: nom.trim(), type, banque: banque.trim() || null })}>
           Enregistrer
         </button>
       </div>

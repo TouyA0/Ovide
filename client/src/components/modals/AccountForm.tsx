@@ -6,13 +6,14 @@ interface Props {
   members: Member[];
   defaultMemberId?: string;
   onClose: () => void;
-  onSave: (data: { memberId: string; nom: string; type: 'courant' | 'epargne' | 'autre'; soldeInitial: number }) => void;
+  onSave: (data: { memberId: string; nom: string; type: 'courant' | 'epargne' | 'autre'; banque: string | null; soldeInitial: number }) => void;
 }
 
 export function AccountFormModal({ members, defaultMemberId, onClose, onSave }: Props) {
   const [memberId, setMemberId] = useState(defaultMemberId ?? members[0]?.id ?? '');
   const [nom, setNom] = useState('');
   const [type, setType] = useState<'courant' | 'epargne' | 'autre'>('courant');
+  const [banque, setBanque] = useState('');
   const [solde, setSolde] = useState('');
 
   const valid = !!nom.trim() && !!memberId;
@@ -35,6 +36,9 @@ export function AccountFormModal({ members, defaultMemberId, onClose, onSave }: 
           <option value="autre">Autre</option>
         </select>
 
+        <div className="field-label" style={{ marginTop: 12 }}>Banque <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optionnel)</span></div>
+        <input className="input field" placeholder="Ex. Crédit Agricole" value={banque} onChange={e => setBanque(e.target.value)} />
+
         <div className="field-label" style={{ marginTop: 12 }}>Solde initial (solde actuel réel)</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input className="input" inputMode="decimal" placeholder="0,00" value={solde}
@@ -45,7 +49,7 @@ export function AccountFormModal({ members, defaultMemberId, onClose, onSave }: 
       <div className="modal-foot">
         <button className="btn ghost" onClick={onClose}>Annuler</button>
         <button className="btn primary" disabled={!valid}
-          onClick={() => onSave({ memberId, nom: nom.trim(), type, soldeInitial: parseFloat(solde.replace(',', '.')) || 0 })}>
+          onClick={() => onSave({ memberId, nom: nom.trim(), type, banque: banque.trim() || null, soldeInitial: parseFloat(solde.replace(',', '.')) || 0 })}>
           Créer le compte
         </button>
       </div>

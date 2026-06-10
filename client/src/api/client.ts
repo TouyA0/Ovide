@@ -76,6 +76,7 @@ export interface Account {
   memberId: string;
   nom: string;
   type: 'courant' | 'epargne' | 'autre';
+  banque: string | null;
   soldeInitial: number;
   previsionsActivees: boolean;
   archive: boolean;

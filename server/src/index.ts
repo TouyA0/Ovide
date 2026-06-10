@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { cfAccessMiddleware } from './middleware/cfAccess';
+import { sqlite } from './db/client';
 import membersRouter from './routes/members';
 import accountsRouter from './routes/accounts';
 import transactionsRouter from './routes/transactions';
@@ -12,6 +13,9 @@ import exportRouter from './routes/export';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+
+// Migrations légères au démarrage (colonnes ajoutées après le seed initial)
+try { sqlite.exec('ALTER TABLE accounts ADD COLUMN banque TEXT'); } catch { /* colonne déjà présente */ }
 
 app.use(express.json());
 

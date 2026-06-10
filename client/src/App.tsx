@@ -116,7 +116,7 @@ export default function App() {
     setModal(null);
   };
 
-  const handleEditAccount = async (accId: string, data: { nom: string; type: 'courant' | 'epargne' | 'autre' }) => {
+  const handleEditAccount = async (accId: string, data: { nom: string; type: 'courant' | 'epargne' | 'autre'; banque: string | null }) => {
     await updateAccount.mutateAsync({ id: accId, data });
     pushToast('Compte mis à jour');
     setModal(null);

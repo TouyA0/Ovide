@@ -61,6 +61,9 @@ function BalanceHeader({ account, member, onAdd, onTransfer, onExport, onToggleP
           <h1>{account.nom}</h1>
           <span className="type-chip">{account.type === 'epargne' ? 'Épargne' : account.type === 'courant' ? 'Courant' : 'Autre'}</span>
         </div>
+        {account.banque && (
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>{account.banque}</div>
+        )}
         <div className="balance-amount tnum">{intp}<span className="cents">,{dec} €</span></div>
         <div className={`balance-delta ${up ? 'delta-up' : 'delta-down'}`}>
           <span className="pill" style={{ whiteSpace: 'nowrap' }}>

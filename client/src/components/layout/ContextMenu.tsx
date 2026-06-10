@@ -30,7 +30,7 @@ export function ContextMenu({ ctx, account, member, actions, onClose }: Props) {
           <span className="avatar" style={{ background: `var(--m-${member.couleur})`, width: 20, height: 20, fontSize: 9 }}>{member.initiales}</span>
           <div style={{ minWidth: 0 }}>
             <div className="nm">{account.nom}</div>
-            <div className="mb">{member.nom}</div>
+            <div className="mb">{member.nom}{account.banque ? ` · ${account.banque}` : ''}</div>
           </div>
         </div>
         {actions.map((a, i) => a.sep
