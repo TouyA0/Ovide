@@ -44,5 +44,5 @@ export function buildForecast(accountId: string, today: string): ForecastItem[] 
     })
     .filter((r) => r.day >= TD)
     .filter((r) => !confirmedRecurrenceIds.has(r.id))
-    .sort((a, b) => a.day - b.day);
+    .sort((a, b) => b.day - a.day);
 }
