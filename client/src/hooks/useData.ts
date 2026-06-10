@@ -215,6 +215,16 @@ export function useArchiveAccount() {
   });
 }
 
+export function useDeleteAccount() {
+  const qc = useQueryClient();
+  const onError = useOnError();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteAccount(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
+    onError,
+  });
+}
+
 export function useCreateMember() {
   const qc = useQueryClient();
   const onError = useOnError();

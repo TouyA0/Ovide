@@ -27,7 +27,7 @@ import {
   useCreateTransfer, useTogglePrevisions, useCreateAccount, useUpdateAccount, useCreateImport,
   useArchiveAccount, useCreateMember, useUpdateMember, useDeleteMember,
   useCreateCategory, useUpdateCategory, useDeleteCategory,
-  useSkipRecurrence, useUnskipRecurrence,
+  useSkipRecurrence, useUnskipRecurrence, useDeleteAccount,
 } from './hooks/useData';
 import type { Transaction, ForecastItem, Member } from './api/client';
 
@@ -43,6 +43,7 @@ type ModalState =
   | { kind: 'categories' }
   | { kind: 'import'; accId: string }
   | { kind: 'confirm-delete-tx'; tx: Transaction }
+  | { kind: 'delete-account'; accId: string }
   | null;
 
 type CtxState = { x: number; y: number; accId: string } | null;
@@ -99,6 +100,7 @@ export default function App() {
   const deleteCategory = useDeleteCategory();
   const skipRecurrence = useSkipRecurrence();
   const unskipRecurrence = useUnskipRecurrence();
+  const deleteAccount = useDeleteAccount();
 
   const handleAddTx = async (data: Parameters<typeof createTx.mutateAsync>[0]) => {
     await createTx.mutateAsync(data);
@@ -191,6 +193,12 @@ export default function App() {
     pushToast('Compte remis en actif');
   };
 
+  const handleDeleteAccount = async (accId: string) => {
+    await deleteAccount.mutateAsync(accId);
+    pushToast('Compte supprimé', 'trash-2');
+    setModal(null);
+  };
+
   const handleCreateMember = async (data: Parameters<typeof createMember.mutateAsync>[0]) => {
     await createMember.mutateAsync(data);
     pushToast('Membre ajouté');
@@ -250,6 +258,7 @@ export default function App() {
       isArchived
         ? { icon: <Archive size={16} />, label: 'Désarchiver le compte', fn: () => handleUnarchiveAccount(accId) }
         : { icon: <Archive size={16} />, label: 'Archiver le compte', danger: true, fn: () => setModal({ kind: 'archive-account' as const, accId }) },
+      ...(isArchived ? [{ sep: true }, { icon: <Trash2 size={16} />, label: 'Supprimer définitivement', danger: true, fn: () => setModal({ kind: 'delete-account' as const, accId }) }] : []),
     ];
   };
 
@@ -512,6 +521,29 @@ export default function App() {
             onClose={() => setMemberCtx(null)}
           />
         );
+      })()}
+
+      {/* Confirmation suppression compte archivé */}
+      {modal?.kind === 'delete-account' && (() => {
+        const acc = accounts.find(a => a.id === modal.accId);
+        return acc ? (
+          <Modal title="Supprimer le compte" onClose={() => setModal(null)}>
+            <div className="modal-body">
+              <p style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>
+                Supprimer définitivement <strong>{acc.nom}</strong> ? Toutes les transactions,
+                récurrences et pièces jointes associées seront effacées. Cette action est irréversible.
+              </p>
+            </div>
+            <div className="modal-foot">
+              <button className="btn ghost" onClick={() => setModal(null)} disabled={deleteAccount.isPending}>Annuler</button>
+              <button className="btn danger" disabled={deleteAccount.isPending}
+                style={{ background: 'var(--neg)', color: '#fff', borderColor: 'transparent' }}
+                onClick={() => handleDeleteAccount(modal.accId)}>
+                {deleteAccount.isPending ? <Loader2 size={15} className="spin" /> : <><Trash2 size={15} /> Supprimer définitivement</>}
+              </button>
+            </div>
+          </Modal>
+        ) : null;
       })()}
 
       {/* Confirmation suppression tx avec pièce jointe */}

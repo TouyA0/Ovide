@@ -26,6 +26,7 @@ export const api = {
   updateAccount: (id: string, data: Partial<Account>) => request('/accounts/' + id, { method: 'PUT', body: JSON.stringify(data) }),
   togglePrevisions: (id: string) => request<{ previsionsActivees: boolean }>('/accounts/' + id + '/previsions', { method: 'PATCH' }),
   archiveAccount: (id: string, archive: boolean) => request('/accounts/' + id + '/archive', { method: 'PATCH', body: JSON.stringify({ archive }) }),
+  deleteAccount: (id: string) => request('/accounts/' + id, { method: 'DELETE' }),
 
   // Transactions
   getTransactions: (accountId?: string) => request<Transaction[]>('/transactions' + (accountId ? `?accountId=${accountId}` : '')),
