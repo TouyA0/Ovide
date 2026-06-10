@@ -303,7 +303,6 @@ export default function App() {
                 mobileSection={mobileSection}
                 onAdd={() => setModal({ kind: 'add', accId: layout.activeId! })}
                 onTransfer={() => setModal({ kind: 'transfer', accId: layout.activeId! })}
-                onExport={() => handleExport(layout.activeId!)}
                 onEdit={tx => setModal({ kind: 'edit', tx })}
                 onDelete={handleDeleteTx}
                 onConfirmForecast={handleConfirmForecast}
@@ -318,7 +317,6 @@ export default function App() {
                 mobileSection={mobileSection}
                 onAdd={() => setModal({ kind: 'add', accId: layout.splitId! })}
                 onTransfer={() => setModal({ kind: 'transfer', accId: layout.splitId! })}
-                onExport={() => handleExport(layout.splitId!)}
                 onEdit={tx => setModal({ kind: 'edit', tx })}
                 onDelete={handleDeleteTx}
                 onConfirmForecast={handleConfirmForecast}

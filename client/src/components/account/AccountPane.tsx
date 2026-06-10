@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, ArrowLeftRight, Eye, EyeOff, Download, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock } from 'lucide-react';
+import { Plus, ArrowLeftRight, Eye, EyeOff, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { BalanceChart } from '../charts/BalanceChart';
 import { IncomeExpenseBars } from '../charts/IncomeExpenseBars';
@@ -20,18 +20,17 @@ interface Props {
   mobileSection?: 'transactions' | 'stats';
   onAdd: () => void;
   onTransfer: () => void;
-  onExport: () => void;
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
   onConfirmForecast: (f: ForecastItem) => void;
   onTogglePrevisions: () => void;
 }
 
-export function AccountPane({ account, member, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onExport, onEdit, onDelete, onConfirmForecast, onTogglePrevisions }: Props) {
+export function AccountPane({ account, member, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onEdit, onDelete, onConfirmForecast, onTogglePrevisions }: Props) {
   return (
     <div className={`pane m-active${isSplitTarget ? ' is-split-target' : ''}`} data-section={mobileSection}>
       <div className="pane-inner">
-        <BalanceHeader account={account} member={member} onAdd={onAdd} onTransfer={onTransfer} onExport={onExport} onTogglePrevisions={onTogglePrevisions} />
+        <BalanceHeader account={account} member={member} onAdd={onAdd} onTransfer={onTransfer} onTogglePrevisions={onTogglePrevisions} />
         <div className="m-section-stats">
           <StatsSection account={account} member={member} categories={categories} />
         </div>
@@ -47,7 +46,7 @@ export function AccountPane({ account, member, categories, isSplitTarget, mobile
 }
 
 /* ---- Balance header ---- */
-function BalanceHeader({ account, member, onAdd, onTransfer, onExport, onTogglePrevisions }: Omit<Props, 'categories' | 'isSplitTarget' | 'onEdit' | 'onConfirmForecast'>) {
+function BalanceHeader({ account, member, onAdd, onTransfer, onTogglePrevisions }: Omit<Props, 'categories' | 'isSplitTarget' | 'onEdit' | 'onConfirmForecast'>) {
   const cmp = useComparison(account.id);
   const cur = cmp.data?.cur ?? { net: 0, income: 0, expense: 0 };
   const prev = cmp.data?.prev ?? { net: 0, income: 0, expense: 0 };
@@ -92,7 +91,6 @@ function BalanceHeader({ account, member, onAdd, onTransfer, onExport, onToggleP
             {account.previsionsActivees ? <Eye size={16} /> : <EyeOff size={16} />} Prévisions
           </button>
         )}
-        <button className="btn" onClick={onExport}><Download size={16} /> CSV</button>
       </div>
     </div>
   );
