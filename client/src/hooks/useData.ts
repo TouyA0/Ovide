@@ -282,3 +282,11 @@ export function useDeleteRecurrence() {
     onError,
   });
 }
+
+export function useReorderRecurrences() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => api.reorderRecurrences(ids),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['recurrences'] }); },
+  });
+}

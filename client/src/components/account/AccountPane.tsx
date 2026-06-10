@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, ArrowLeftRight, Eye, EyeOff, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock } from 'lucide-react';
+import { Plus, ArrowLeftRight, Eye, EyeOff, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock, GripVertical } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { BalanceChart } from '../charts/BalanceChart';
 import { IncomeExpenseBars } from '../charts/IncomeExpenseBars';
@@ -7,7 +7,7 @@ import { CategoryDonut } from '../charts/CategoryDonut';
 import { RecurrenceFormModal } from '../modals/RecurrenceFormModal';
 import {
   useTransactions, useBalanceSeries, useBars, useComparison, useDonut, useForecast,
-  useRecurrences, useCreateRecurrence, useUpdateRecurrence, useDeleteRecurrence,
+  useRecurrences, useCreateRecurrence, useUpdateRecurrence, useDeleteRecurrence, useReorderRecurrences,
 } from '../../hooks/useData';
 import { fmtEur, fmtEurShort, fmtChange, pctDelta, MONTHS_FULL, MONTHS } from '../../utils/format';
 import type { Account, Member, Category, Transaction, ForecastItem, Recurrence } from '../../api/client';
@@ -24,7 +24,7 @@ interface Props {
   onTransfer: () => void;
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
-  onConfirmForecast: (f: ForecastItem) => void;
+  onConfirmForecast: (f: ForecastItem) => Promise<string>;
   onTogglePrevisions: () => void;
 }
 
@@ -225,7 +225,7 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
   account: Account; accounts: Account[]; members: Member[]; categories: Category[];
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
-  onConfirmForecast: (f: ForecastItem) => void;
+  onConfirmForecast: (f: ForecastItem) => Promise<string>;
 }) {
   const accountMap = useMemo(() => Object.fromEntries(accounts.map(a => [a.id, a])), [accounts]);
   const memberMap = useMemo(() => Object.fromEntries(members.map(m => [m.id, m])), [members]);
@@ -236,14 +236,19 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
   const [limit, setLimit] = useState(TX_PAGE);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
+  const [flashId, setFlashId] = useState<string | null>(null);
   const confirmingRef = useRef(false);
 
   const handleConfirm = async (f: ForecastItem) => {
     if (confirmingRef.current) return;
     confirmingRef.current = true;
     setConfirmingId(f.id);
-    setConfirmedIds(prev => new Set([...prev, f.id])); // retrait optimiste immédiat
-    try { await onConfirmForecast(f); } finally {
+    setConfirmedIds(prev => new Set([...prev, f.id]));
+    try {
+      const newId = await onConfirmForecast(f);
+      setFlashId(newId);
+      setTimeout(() => setFlashId(null), 1800);
+    } finally {
       confirmingRef.current = false;
       setConfirmingId(null);
     }
@@ -439,7 +444,7 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
               ] : null;
               const [, txM, txD] = t.date.split('-').map(Number);
               return (
-                <button className="tx-row" key={t.id} onClick={() => onEdit(t)}>
+                <button className={`tx-row${t.id === flashId ? ' tx-flash' : ''}`} key={t.id} onClick={() => onEdit(t)}>
                   {/* Date stamp — visible uniquement sur la 1re ligne du groupe */}
                   <span className={`tx-stamp${ti > 0 ? ' blank' : ''}`}>
                     <span className="tx-stamp-d">{txD}</span>
@@ -514,28 +519,55 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
 /* ---- Recurrences section ---- */
 function RecurrencesSection({ account, categories }: { account: Account; categories: Category[] }) {
   const [modal, setModal] = useState<'create' | Recurrence | null>(null);
+  const [localOrder, setLocalOrder] = useState<string[] | null>(null);
+  const dragId = useRef<string | null>(null);
   const recQ = useRecurrences(account.id);
   const createRec = useCreateRecurrence();
   const updateRec = useUpdateRecurrence();
   const deleteRec = useDeleteRecurrence();
+  const reorder = useReorderRecurrences();
 
-  const recs = recQ.data ?? [];
+  const serverRecs = recQ.data ?? [];
+  // Ordre local optimiste pendant le drag ; retombe sur l'ordre serveur sinon
+  const recs = useMemo(() => {
+    if (!localOrder) return serverRecs;
+    const map = Object.fromEntries(serverRecs.map(r => [r.id, r]));
+    return localOrder.map(id => map[id]).filter(Boolean) as Recurrence[];
+  }, [serverRecs, localOrder]);
+
   const catMap = useMemo(() => Object.fromEntries(categories.map(c => [c.id, c])), [categories]);
 
   const handleCreate = async (data: Omit<Recurrence, 'id'>) => {
     await createRec.mutateAsync(data);
     setModal(null);
   };
-
   const handleUpdate = async (id: string, data: Omit<Recurrence, 'id'>) => {
     await updateRec.mutateAsync({ id, data });
     setModal(null);
   };
-
   const handleDelete = async (id: string) => {
     await deleteRec.mutateAsync(id);
     setModal(null);
   };
+
+  // Drag handlers
+  const onDragStart = (id: string) => { dragId.current = id; };
+  const onDragOver = (e: React.DragEvent, overId: string) => {
+    e.preventDefault();
+    if (!dragId.current || dragId.current === overId) return;
+    const base = localOrder ?? serverRecs.map(r => r.id);
+    const from = base.indexOf(dragId.current);
+    const to = base.indexOf(overId);
+    if (from === -1 || to === -1) return;
+    const next = [...base];
+    next.splice(from, 1);
+    next.splice(to, 0, dragId.current);
+    setLocalOrder(next);
+  };
+  const onDrop = () => {
+    if (localOrder) reorder.mutate(localOrder);
+  };
+  const onDragEnd = () => { dragId.current = null; };
 
   return (
     <div className="tx-section" style={{ marginTop: 8 }}>
@@ -564,22 +596,29 @@ function RecurrencesSection({ account, categories }: { account: Account; categor
                 ]
               : null;
             return (
-              <button key={r.id} className="tx-row" onClick={() => setModal(r)}>
+              <div key={r.id} className="tx-row rec-row"
+                draggable
+                onDragStart={() => onDragStart(r.id)}
+                onDragOver={e => onDragOver(e, r.id)}
+                onDrop={onDrop}
+                onDragEnd={onDragEnd}
+              >
+                <span className="rec-grip"><GripVertical size={15} /></span>
                 <span className="tx-ico" style={{ background: `oklch(0.6 0.12 ${hue} / 0.13)`, color: `oklch(0.5 0.13 ${hue})` }}>
                   {IconComp ? <IconComp size={17} /> : <RefreshCw size={17} />}
                 </span>
-                <div className="tx-body">
+                <button className="tx-body rec-body-btn" onClick={() => setModal(r)}>
                   <div className="tx-label">{r.libelle || c?.nom || 'Récurrence'}</div>
                   <div className="tx-meta">
                     <i className="cat-dot" style={{ background: `oklch(0.6 0.12 ${hue})` }} />
                     <span>{c?.nom ?? 'Divers'} · le {r.jourDuMois} du mois</span>
                   </div>
-                </div>
+                </button>
                 <span className={`tx-amount ${r.sens === 'income' ? 'inc' : 'exp'}`}>
                   {r.sens === 'income' ? '+' : '−'}{fmtEur(r.montant)}
                 </span>
                 <span className="tx-edit-hint"><LucideIcons.ChevronRight size={16} /></span>
-              </button>
+              </div>
             );
           })}
         </div>

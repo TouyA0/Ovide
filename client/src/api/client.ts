@@ -48,6 +48,7 @@ export const api = {
   createRecurrence: (data: Partial<Recurrence>) => request<{ id: string }>('/recurrences', { method: 'POST', body: JSON.stringify(data) }),
   updateRecurrence: (id: string, data: Partial<Recurrence>) => request('/recurrences/' + id, { method: 'PUT', body: JSON.stringify(data) }),
   deleteRecurrence: (id: string) => request('/recurrences/' + id, { method: 'DELETE' }),
+  reorderRecurrences: (ids: string[]) => request('/recurrences/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
 
   // Stats
   getBalanceSeries: (accountId: string, range: 'mois' | 'six' | 'annee') =>
@@ -116,6 +117,7 @@ export interface Recurrence {
   jourDuMois: number;
   libelle: string;
   note: string;
+  position: number;
 }
 
 export interface BalancePoint { label: string; value: number; }

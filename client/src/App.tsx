@@ -111,12 +111,13 @@ export default function App() {
     setModal(null);
   };
 
-  const handleConfirmForecast = async (f: ForecastItem) => {
+  const handleConfirmForecast = async (f: ForecastItem): Promise<string> => {
     const { id } = await createTx.mutateAsync({ accountId: f.accountId, type: f.sens as 'income' | 'expense', montant: f.montant, categorieId: f.categorieId ?? undefined, libelle: f.libelle, date: f.date, note: '', recurrenceId: f.id });
     pushToast(`${f.libelle || 'Opération'} confirmée`, 'check-circle-2', {
       label: 'Annuler',
       fn: () => deleteTx.mutateAsync(id),
     });
+    return id;
   };
 
   const handleTogglePrev = async (id: string) => {
