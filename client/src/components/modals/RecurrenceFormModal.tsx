@@ -76,8 +76,8 @@ export function RecurrenceFormModal({ recurrence, accountId, categories, isPendi
         <input className="input field" placeholder="Ex. Loyer, Salaire…" value={libelle}
           onChange={e => setLibelle(e.target.value)} />
 
-        <div className="field-label" style={{ marginTop: 12 }}>Note <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optionnelle)</span></div>
-        <textarea className="input field" placeholder="Note…" value={note} onChange={e => setNote(e.target.value)}
+        <div className="field-label" style={{ marginTop: 12 }}>Commentaire <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optionnel)</span></div>
+        <textarea className="input field" placeholder="Commentaire…" value={note} onChange={e => setNote(e.target.value)}
           rows={2} style={{ resize: 'none', lineHeight: 1.5 }} />
 
         <div className="field-label" style={{ marginTop: 12 }}>Jour du mois</div>

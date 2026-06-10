@@ -99,7 +99,7 @@ export function TransferModal({ accounts, members, categories, defaultFromId, is
           <input className="input" placeholder="Libellé" value={libelle} onChange={e => setLibelle(e.target.value)} />
         </div>
         <div className="field" style={{ marginTop: 10 }}>
-          <textarea className="input" placeholder="Note (optionnelle)" value={note} onChange={e => setNote(e.target.value)}
+          <textarea className="input" placeholder="Commentaire (optionnel)" value={note} onChange={e => setNote(e.target.value)}
             rows={2} style={{ resize: 'none', lineHeight: 1.5 }} />
         </div>
       </div>
