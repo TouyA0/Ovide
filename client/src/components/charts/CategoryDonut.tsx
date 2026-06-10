@@ -5,6 +5,18 @@ interface Slice { nom: string; hue: number; value: number; }
 
 export function CategoryDonut({ slices }: { slices: Slice[] }) {
   const [hover, setHover] = useState<number | null>(null);
+
+  if (slices.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '28px 0', color: 'var(--text-3)' }}>
+        <svg viewBox="0 0 200 200" width="120" height="120" style={{ opacity: 0.18 }}>
+          <circle cx="100" cy="100" r="80" fill="none" stroke="var(--text)" strokeWidth="30" strokeDasharray="12 8" />
+        </svg>
+        <span style={{ fontSize: 13, fontWeight: 600 }}>Aucune dépense ce mois-ci</span>
+      </div>
+    );
+  }
+
   const total = slices.reduce((s, x) => s + x.value, 0) || 1;
   const R = 80, r = 50, C = 100;
   let acc = 0;
