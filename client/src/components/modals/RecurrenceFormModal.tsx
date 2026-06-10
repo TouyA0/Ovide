@@ -22,12 +22,13 @@ export function RecurrenceFormModal({ recurrence, accountId, categories, isPendi
   const [amount, setAmount] = useState(recurrence ? String(recurrence.montant).replace('.', ',') : '');
   const [catId, setCatId] = useState<string | null>(recurrence?.categorieId ?? null);
   const [libelle, setLibelle] = useState(recurrence?.libelle ?? '');
+  const [note, setNote] = useState(recurrence?.note ?? '');
   const [jour, setJour] = useState(String(recurrence?.jourDuMois ?? ''));
   const [confirmDel, setConfirmDel] = useState(false);
 
   const parsed = parseFloat(amount.replace(',', '.'));
   const jourNum = parseInt(jour);
-  const valid = parsed > 0 && jourNum >= 1 && jourNum <= 31;
+  const valid = parsed > 0 && !!libelle.trim() && jourNum >= 1 && jourNum <= 31;
 
   const buildData = (): Omit<Recurrence, 'id'> => ({
     accountId,
@@ -36,6 +37,7 @@ export function RecurrenceFormModal({ recurrence, accountId, categories, isPendi
     categorieId: catId,
     jourDuMois: jourNum,
     libelle: libelle.trim(),
+    note: note.trim(),
   });
 
   const handleSave = () => {
@@ -69,9 +71,13 @@ export function RecurrenceFormModal({ recurrence, accountId, categories, isPendi
         <div className="field-label">Catégorie</div>
         <CategoryPicker categories={categories} selected={catId} onChange={setCatId} filter={sens} />
 
-        <div className="field-label">Libellé <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optionnel)</span></div>
+        <div className="field-label">Libellé</div>
         <input className="input field" placeholder="Ex. Loyer, Salaire…" value={libelle}
           onChange={e => setLibelle(e.target.value)} />
+
+        <div className="field-label" style={{ marginTop: 12 }}>Note <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optionnelle)</span></div>
+        <textarea className="input field" placeholder="Note…" value={note} onChange={e => setNote(e.target.value)}
+          rows={2} style={{ resize: 'none', lineHeight: 1.5 }} />
 
         <div className="field-label" style={{ marginTop: 12 }}>Jour du mois</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

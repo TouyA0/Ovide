@@ -34,7 +34,7 @@ export const api = {
   deleteTransaction: (id: string) => request('/transactions/' + id, { method: 'DELETE' }),
 
   // Transfers
-  createTransfer: (data: { fromId: string; toId: string; montant: number; date: string; libelle?: string; categorieId?: string | null }) =>
+  createTransfer: (data: { fromId: string; toId: string; montant: number; date: string; libelle: string; note: string; categorieId?: string | null }) =>
     request<{ transferId: string }>('/transfers', { method: 'POST', body: JSON.stringify(data) }),
 
   // Categories
@@ -114,6 +114,7 @@ export interface Recurrence {
   categorieId: string | null;
   jourDuMois: number;
   libelle: string;
+  note: string;
 }
 
 export interface BalancePoint { label: string; value: number; }

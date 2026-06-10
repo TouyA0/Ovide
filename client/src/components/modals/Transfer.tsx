@@ -12,7 +12,7 @@ interface Props {
   defaultFromId: string;
   isPending?: boolean;
   onClose: () => void;
-  onSave: (data: { fromId: string; toId: string; montant: number; date: string; libelle: string; categorieId?: string | null }) => void;
+  onSave: (data: { fromId: string; toId: string; montant: number; date: string; libelle: string; note: string; categorieId?: string | null }) => void;
 }
 
 export function TransferModal({ accounts, members, categories, defaultFromId, isPending, onClose, onSave }: Props) {
@@ -24,6 +24,7 @@ export function TransferModal({ accounts, members, categories, defaultFromId, is
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today());
   const [libelle, setLibelle] = useState('');
+  const [note, setNote] = useState('');
   const amountRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { const t = setTimeout(() => amountRef.current?.focus(), 80); return () => clearTimeout(t); }, []);
@@ -36,7 +37,7 @@ export function TransferModal({ accounts, members, categories, defaultFromId, is
   const from = nameOf(fromId);
   const to = nameOf(toId);
   const parsed = parseFloat(amount.replace(',', '.'));
-  const valid = parsed > 0 && !!toId;
+  const valid = parsed > 0 && !!toId && !!libelle.trim();
 
   return (
     <Modal title="Virement entre comptes" onClose={onClose}>
@@ -95,14 +96,18 @@ export function TransferModal({ accounts, members, categories, defaultFromId, is
         <div className="field-label" style={{ marginTop: 14 }}>Détails</div>
         <div className="row2">
           <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} aria-label="Date" />
-          <input className="input" placeholder="Libellé (optionnel)" value={libelle} onChange={e => setLibelle(e.target.value)} />
+          <input className="input" placeholder="Libellé" value={libelle} onChange={e => setLibelle(e.target.value)} />
+        </div>
+        <div className="field" style={{ marginTop: 10 }}>
+          <textarea className="input" placeholder="Note (optionnelle)" value={note} onChange={e => setNote(e.target.value)}
+            rows={2} style={{ resize: 'none', lineHeight: 1.5 }} />
         </div>
       </div>
 
       <div className="modal-foot">
         <button className="btn ghost" onClick={onClose} disabled={!!isPending}>Annuler</button>
         <button className="btn primary" disabled={!valid || !!isPending}
-          onClick={() => valid && onSave({ fromId, toId, montant: Math.abs(parsed), date, libelle: libelle.trim() || 'Virement', categorieId: catId })}>
+          onClick={() => valid && onSave({ fromId, toId, montant: Math.abs(parsed), date, libelle: libelle.trim(), note: note.trim(), categorieId: catId })}>
           {isPending ? <Loader2 size={15} className="spin" /> : <>Transférer {valid ? parsed.toFixed(2).replace('.', ',') + ' €' : ''}</>}
         </button>
       </div>

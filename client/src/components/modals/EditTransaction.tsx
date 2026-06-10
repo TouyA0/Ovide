@@ -26,7 +26,7 @@ export function EditTransactionModal({ tx, categories, accounts: _accounts, memb
   const [confirmDel, setConfirmDel] = useState(false);
 
   const parsed = parseFloat(amount.replace(',', '.'));
-  const valid = parsed > 0;
+  const valid = parsed > 0 && !!libelle.trim();
 
   return (
     <Modal title={isTransfer ? 'Virement' : "Modifier l'opération"} onClose={onClose}>

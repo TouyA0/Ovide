@@ -50,4 +50,5 @@ export const recurrences = sqliteTable('recurrences', {
   categorieId: text('categorie_id').references(() => categories.id),
   jourDuMois: integer('jour_du_mois').notNull(), // 1-31
   libelle: text('libelle').notNull().default(''),
+  note: text('note').notNull().default(''),
 });

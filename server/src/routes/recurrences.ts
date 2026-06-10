@@ -16,19 +16,19 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { accountId, montant, sens, categorieId, jourDuMois, libelle } = req.body;
+  const { accountId, montant, sens, categorieId, jourDuMois, libelle, note } = req.body;
   if (!accountId || !montant || !sens || !jourDuMois) {
     res.status(400).json({ error: 'accountId, montant, sens et jourDuMois requis' });
     return;
   }
   const id = 'rec_' + randomUUID().slice(0, 8);
-  db.insert(recurrences).values({ id, accountId, montant: Number(montant), sens, categorieId: categorieId ?? null, jourDuMois: Number(jourDuMois), libelle: libelle ?? '' }).run();
+  db.insert(recurrences).values({ id, accountId, montant: Number(montant), sens, categorieId: categorieId ?? null, jourDuMois: Number(jourDuMois), libelle: libelle ?? '', note: note ?? '' }).run();
   res.status(201).json({ id });
 });
 
 router.put('/:id', (req, res) => {
-  const { montant, sens, categorieId, jourDuMois, libelle } = req.body;
-  db.update(recurrences).set({ montant, sens, categorieId, jourDuMois, libelle }).where(eq(recurrences.id, req.params.id)).run();
+  const { montant, sens, categorieId, jourDuMois, libelle, note } = req.body;
+  db.update(recurrences).set({ montant, sens, categorieId, jourDuMois, libelle, note: note ?? '' }).where(eq(recurrences.id, req.params.id)).run();
   res.json({ ok: true });
 });
 

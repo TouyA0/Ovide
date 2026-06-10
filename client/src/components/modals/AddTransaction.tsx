@@ -23,6 +23,7 @@ export function AddTransactionModal({ accounts, members, categories, defaultAcco
   const [amount, setAmount] = useState('');
   const [catId, setCatId] = useState<string | null>(null);
   const [libelle, setLibelle] = useState('');
+  const [note, setNote] = useState('');
   const [date, setDate] = useState(today());
   const [accId, setAccId] = useState(defaultAccountId || accounts[0]?.id);
   const amountRef = useRef<HTMLInputElement>(null);
@@ -30,11 +31,11 @@ export function AddTransactionModal({ accounts, members, categories, defaultAcco
   useEffect(() => { const t = setTimeout(() => amountRef.current?.focus(), 80); return () => clearTimeout(t); }, []);
 
   const parsedAmount = parseFloat(amount.replace(',', '.'));
-  const valid = parsedAmount > 0 && !!catId;
+  const valid = parsedAmount > 0 && !!catId && !!libelle.trim();
 
   const submit = () => {
     if (!valid || !catId) return;
-    onSave({ accountId: accId, type, montant: Math.abs(parsedAmount), categorieId: catId, libelle: libelle.trim(), date, note: '' });
+    onSave({ accountId: accId, type, montant: Math.abs(parsedAmount), categorieId: catId, libelle: libelle.trim(), date, note: note.trim() });
   };
 
   const onAmountKey = (e: React.KeyboardEvent) => {
@@ -66,7 +67,11 @@ export function AddTransactionModal({ accounts, members, categories, defaultAcco
 
         <div className="field-label">Détails</div>
         <div className="field">
-          <input className="input" placeholder="Libellé (optionnel)" value={libelle} onChange={e => setLibelle(e.target.value)} />
+          <input className="input" placeholder="Libellé" value={libelle} onChange={e => setLibelle(e.target.value)} />
+        </div>
+        <div className="field" style={{ marginTop: 10 }}>
+          <textarea className="input" placeholder="Note (optionnelle)" value={note} onChange={e => setNote(e.target.value)}
+            rows={2} style={{ resize: 'none', lineHeight: 1.5 }} />
         </div>
         <div className="row2" style={{ marginTop: 10 }}>
           <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} aria-label="Date" />

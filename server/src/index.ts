@@ -17,6 +17,7 @@ const PORT = Number(process.env.PORT) || 3000;
 // Migrations légères au démarrage (colonnes ajoutées après le seed initial)
 try { sqlite.exec('ALTER TABLE accounts ADD COLUMN banque TEXT'); } catch { /* déjà présente */ }
 try { sqlite.exec('ALTER TABLE transactions ADD COLUMN recurrence_id TEXT'); } catch { /* déjà présente */ }
+try { sqlite.exec("ALTER TABLE recurrences ADD COLUMN note TEXT NOT NULL DEFAULT ''"); } catch { /* déjà présente */ }
 
 app.use(express.json());
 
