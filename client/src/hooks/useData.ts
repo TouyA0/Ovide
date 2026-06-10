@@ -290,3 +290,41 @@ export function useReorderRecurrences() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['recurrences'] }); },
   });
 }
+
+export function useImports(accountId: string) {
+  return useQuery({ queryKey: ['imports', accountId], queryFn: () => api.getImports(accountId), enabled: !!accountId });
+}
+
+export function useCreateImport() {
+  const qc = useQueryClient();
+  const onError = useOnError();
+  return useMutation({
+    mutationFn: api.createImport,
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['transactions', vars.accountId] });
+      qc.invalidateQueries({ queryKey: ['imports', vars.accountId] });
+      qc.invalidateQueries({ queryKey: ['balance-series'] });
+      qc.invalidateQueries({ queryKey: ['bars'] });
+      qc.invalidateQueries({ queryKey: ['comparison'] });
+      qc.invalidateQueries({ queryKey: ['donut'] });
+    },
+    onError,
+  });
+}
+
+export function useDeleteImport() {
+  const qc = useQueryClient();
+  const onError = useOnError();
+  return useMutation({
+    mutationFn: ({ id, accountId: _accountId }: { id: string; accountId: string }) => api.deleteImport(id),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['transactions', vars.accountId] });
+      qc.invalidateQueries({ queryKey: ['imports', vars.accountId] });
+      qc.invalidateQueries({ queryKey: ['balance-series'] });
+      qc.invalidateQueries({ queryKey: ['bars'] });
+      qc.invalidateQueries({ queryKey: ['comparison'] });
+      qc.invalidateQueries({ queryKey: ['donut'] });
+    },
+    onError,
+  });
+}

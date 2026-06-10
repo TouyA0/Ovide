@@ -50,6 +50,12 @@ export const api = {
   deleteRecurrence: (id: string) => request('/recurrences/' + id, { method: 'DELETE' }),
   reorderRecurrences: (ids: string[]) => request('/recurrences/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
 
+  // Imports
+  getImports: (accountId: string) => request<BankImport[]>('/imports?accountId=' + accountId),
+  createImport: (data: { accountId: string; filename: string; bankName: string; txs: { date: string; libelle: string; montant: number; type: 'income' | 'expense' }[] }) =>
+    request<{ id: string; transactionCount: number }>('/imports', { method: 'POST', body: JSON.stringify(data) }),
+  deleteImport: (id: string) => request('/imports/' + id, { method: 'DELETE' }),
+
   // Stats
   getBalanceSeries: (accountId: string, range: 'mois' | 'six' | 'annee') =>
     request<{ series: BalancePoint[]; projection: BalancePoint[] }>(`/stats/${accountId}/balance-series?range=${range}`),
@@ -128,3 +134,12 @@ export interface ComparisonData {
 }
 export interface DonutSlice { categorieId: string | null; total: number; }
 export interface ForecastItem extends Recurrence { date: string; day: number; }
+
+export interface BankImport {
+  id: string;
+  accountId: string;
+  filename: string;
+  bankName: string;
+  importedAt: string;
+  transactionCount: number;
+}

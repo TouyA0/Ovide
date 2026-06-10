@@ -38,8 +38,18 @@ export const transactions = sqliteTable('transactions', {
   note: text('note').notNull().default(''),
   transferId: text('transfer_id'), // partagé entre les 2 écritures d'un virement
   dir: text('dir'), // 'in' | 'out' — pour les virements
-  recurrenceId: text('recurrence_id').references(() => recurrences.id),
+  recurrenceId: text('recurrence_id'),
+  importId: text('import_id'),
   createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
+});
+
+export const imports = sqliteTable('imports', {
+  id: text('id').primaryKey(),
+  accountId: text('account_id').notNull().references(() => accounts.id),
+  filename: text('filename').notNull(),
+  bankName: text('bank_name').notNull(), // 'ca' | 'ce' | 'bnp'
+  importedAt: text('imported_at').notNull(),
+  transactionCount: integer('transaction_count').notNull().default(0),
 });
 
 export const recurrences = sqliteTable('recurrences', {

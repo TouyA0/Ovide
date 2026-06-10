@@ -11,6 +11,7 @@ import { AddTransactionModal } from './components/modals/AddTransaction';
 import { TransferModal } from './components/modals/Transfer';
 import { EditTransactionModal } from './components/modals/EditTransaction';
 import { AccountFormModal } from './components/modals/AccountForm';
+import { ImportModal } from './components/modals/ImportModal';
 import { AccountEditModal } from './components/modals/AccountEditModal';
 import { MemberFormModal } from './components/modals/MemberForm';
 import { CategoriesModal } from './components/modals/CategoriesModal';
@@ -20,7 +21,7 @@ import { useLayout } from './store/useLayout';
 import {
   useMembers, useAccounts, useCategories,
   useCreateTransaction, useUpdateTransaction, useDeleteTransaction,
-  useCreateTransfer, useTogglePrevisions, useCreateAccount, useUpdateAccount,
+  useCreateTransfer, useTogglePrevisions, useCreateAccount, useUpdateAccount, useCreateImport,
   useArchiveAccount, useCreateMember, useUpdateMember,
   useCreateCategory, useUpdateCategory, useDeleteCategory,
 } from './hooks/useData';
@@ -36,6 +37,7 @@ type ModalState =
   | { kind: 'member' }
   | { kind: 'edit-member'; member: Member }
   | { kind: 'categories' }
+  | { kind: 'import'; accId: string }
   | null;
 
 type CtxState = { x: number; y: number; accId: string } | null;
@@ -79,6 +81,7 @@ export default function App() {
   const createTransfer = useCreateTransfer();
   const togglePrev = useTogglePrevisions();
   const createAccount = useCreateAccount();
+  const createImport = useCreateImport();
   const updateAccount = useUpdateAccount();
   const archiveAccount = useArchiveAccount();
   const createMember = useCreateMember();
@@ -108,6 +111,13 @@ export default function App() {
   const handleTransfer = async (data: Parameters<typeof createTransfer.mutateAsync>[0]) => {
     await createTransfer.mutateAsync(data);
     pushToast('Virement effectué');
+    setModal(null);
+  };
+
+  const handleImport = async (data: { filename: string; bankName: string; txs: { date: string; libelle: string; montant: number; type: 'income' | 'expense' }[] }) => {
+    if (modal?.kind !== 'import') return;
+    const { transactionCount } = await createImport.mutateAsync({ accountId: modal.accId, ...data });
+    pushToast(`${transactionCount} opérations importées`, 'check-circle-2');
     setModal(null);
   };
 
@@ -305,6 +315,7 @@ export default function App() {
                 mobileSection={mobileSection}
                 onAdd={() => setModal({ kind: 'add', accId: layout.activeId! })}
                 onTransfer={() => setModal({ kind: 'transfer', accId: layout.activeId! })}
+                onImport={() => setModal({ kind: 'import', accId: layout.activeId! })}
                 onEdit={tx => setModal({ kind: 'edit', tx })}
                 onDelete={handleDeleteTx}
                 onConfirmForecast={handleConfirmForecast}
@@ -320,6 +331,7 @@ export default function App() {
                 mobileSection={mobileSection}
                 onAdd={() => setModal({ kind: 'add', accId: layout.splitId! })}
                 onTransfer={() => setModal({ kind: 'transfer', accId: layout.splitId! })}
+                onImport={() => setModal({ kind: 'import', accId: layout.splitId! })}
                 onEdit={tx => setModal({ kind: 'edit', tx })}
                 onDelete={handleDeleteTx}
                 onConfirmForecast={handleConfirmForecast}
@@ -340,6 +352,15 @@ export default function App() {
         <TransferModal accounts={accounts} members={members} categories={categories} defaultFromId={modal.accId}
           isPending={createTransfer.isPending}
           onClose={() => setModal(null)} onSave={handleTransfer} />
+      )}
+      {modal?.kind === 'import' && (
+        <ImportModal
+          accountId={modal.accId}
+          accountName={accounts.find(a => a.id === modal.accId)?.nom ?? ''}
+          isPending={createImport.isPending}
+          onClose={() => setModal(null)}
+          onImport={handleImport}
+        />
       )}
       {modal?.kind === 'edit' && (
         <EditTransactionModal tx={modal.tx} categories={categories} accounts={accounts} members={members}

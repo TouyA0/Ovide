@@ -38,6 +38,7 @@ export function RecurrenceFormModal({ recurrence, accountId, categories, isPendi
     jourDuMois: jourNum,
     libelle: libelle.trim(),
     note: note.trim(),
+    position: recurrence?.position ?? 0,
   });
 
   const handleSave = () => {

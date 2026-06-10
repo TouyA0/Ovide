@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, ArrowLeftRight, Eye, EyeOff, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock, GripVertical } from 'lucide-react';
+import { Plus, ArrowLeftRight, Eye, EyeOff, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock, GripVertical, Upload, Trash2, FileText, Loader2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { BalanceChart } from '../charts/BalanceChart';
 import { IncomeExpenseBars } from '../charts/IncomeExpenseBars';
@@ -8,9 +8,10 @@ import { RecurrenceFormModal } from '../modals/RecurrenceFormModal';
 import {
   useTransactions, useBalanceSeries, useBars, useComparison, useDonut, useForecast,
   useRecurrences, useCreateRecurrence, useUpdateRecurrence, useDeleteRecurrence, useReorderRecurrences,
+  useImports, useDeleteImport,
 } from '../../hooks/useData';
 import { fmtEur, fmtEurShort, fmtChange, pctDelta, MONTHS_FULL, MONTHS } from '../../utils/format';
-import type { Account, Member, Category, Transaction, ForecastItem, Recurrence } from '../../api/client';
+import type { Account, Member, Category, Transaction, ForecastItem, Recurrence, BankImport } from '../../api/client';
 
 interface Props {
   account: Account;
@@ -22,17 +23,18 @@ interface Props {
   mobileSection?: 'transactions' | 'stats';
   onAdd: () => void;
   onTransfer: () => void;
+  onImport: () => void;
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
   onConfirmForecast: (f: ForecastItem) => Promise<string>;
   onTogglePrevisions: () => void;
 }
 
-export function AccountPane({ account, member, accounts, members, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onEdit, onDelete, onConfirmForecast, onTogglePrevisions }: Props) {
+export function AccountPane({ account, member, accounts, members, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onImport, onEdit, onDelete, onConfirmForecast, onTogglePrevisions }: Props) {
   return (
     <div className={`pane m-active${isSplitTarget ? ' is-split-target' : ''}`} data-section={mobileSection}>
       <div className="pane-inner">
-        <BalanceHeader account={account} member={member} onAdd={onAdd} onTransfer={onTransfer} onTogglePrevisions={onTogglePrevisions} />
+        <BalanceHeader account={account} member={member} onAdd={onAdd} onTransfer={onTransfer} onImport={onImport} onTogglePrevisions={onTogglePrevisions} />
         <div className="m-section-stats">
           <StatsSection account={account} member={member} categories={categories} />
         </div>
@@ -41,6 +43,7 @@ export function AccountPane({ account, member, accounts, members, categories, is
           {account.type === 'courant' && (
             <RecurrencesSection account={account} categories={categories} />
           )}
+          <ImportsSection account={account} />
         </div>
       </div>
     </div>
@@ -48,7 +51,7 @@ export function AccountPane({ account, member, accounts, members, categories, is
 }
 
 /* ---- Balance header ---- */
-function BalanceHeader({ account, member, onAdd, onTransfer, onTogglePrevisions }: Omit<Props, 'categories' | 'isSplitTarget' | 'onEdit' | 'onConfirmForecast'>) {
+function BalanceHeader({ account, member, onAdd, onTransfer, onImport, onTogglePrevisions }: Pick<Props, 'account' | 'member' | 'onAdd' | 'onTransfer' | 'onImport' | 'onTogglePrevisions'>) {
   const cmp = useComparison(account.id);
   const cur = cmp.data?.cur ?? { net: 0, income: 0, expense: 0 };
   const prev = cmp.data?.prev ?? { net: 0, income: 0, expense: 0 };
@@ -93,6 +96,7 @@ function BalanceHeader({ account, member, onAdd, onTransfer, onTogglePrevisions 
             {account.previsionsActivees ? <Eye size={16} /> : <EyeOff size={16} />} Prévisions
           </button>
         )}
+        <button className="btn" onClick={onImport}><Upload size={16} /> Importer</button>
       </div>
     </div>
   );
@@ -636,6 +640,61 @@ function RecurrencesSection({ account, categories }: { account: Account; categor
           onDelete={handleDelete}
         />
       )}
+    </div>
+  );
+}
+
+/* ---- Imports section ---- */
+const BANK_LABELS: Record<string, string> = { ca: 'Crédit Agricole', ce: 'Caisse d\'Épargne', bnp: 'BNP Paribas' };
+
+function ImportsSection({ account }: { account: Account }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const importsQ = useImports(account.id);
+  const deleteImport = useDeleteImport();
+
+  const imports = (importsQ.data ?? []).slice().sort((a, b) => b.importedAt.localeCompare(a.importedAt));
+  if (imports.length === 0) return null;
+
+  return (
+    <div className="tx-section" style={{ marginTop: 8 }}>
+      <div className="tx-toolbar">
+        <FileText size={15} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+        <h2>Relevés importés</h2>
+        <span className="count">{imports.length}</span>
+      </div>
+      <div className="tx-list">
+        {imports.map((imp: BankImport) => (
+          <div key={imp.id}>
+            <div className="tx-row" style={{ cursor: 'default' }}>
+              <span className="tx-ico" style={{ background: 'var(--surface-2)', color: 'var(--text-3)' }}>
+                <FileText size={17} />
+              </span>
+              <button className="tx-body rec-body-btn" onClick={() => setExpanded(expanded === imp.id ? null : imp.id)}>
+                <div className="tx-label">{imp.filename}</div>
+                <div className="tx-meta">
+                  <span>{BANK_LABELS[imp.bankName] ?? imp.bankName}</span>
+                  <span className="tx-meta-sep">·</span>
+                  <span>{imp.transactionCount} opérations</span>
+                  <span className="tx-meta-sep">·</span>
+                  <span>importé le {imp.importedAt.split('-').reverse().join('/')}</span>
+                </div>
+              </button>
+              {confirmDel === imp.id ? (
+                <button className="btn danger sm" style={{ background: 'var(--neg)', color: '#fff', borderColor: 'transparent', flexShrink: 0 }}
+                  disabled={deleteImport.isPending}
+                  onClick={() => deleteImport.mutate({ id: imp.id, accountId: account.id }, { onSuccess: () => setConfirmDel(null) })}>
+                  {deleteImport.isPending ? <Loader2 size={13} className="spin" /> : 'Confirmer'}
+                </button>
+              ) : (
+                <button className="btn ghost sm" style={{ flexShrink: 0 }} onClick={() => setConfirmDel(imp.id)}>
+                  <Trash2 size={13} /> Annuler
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
