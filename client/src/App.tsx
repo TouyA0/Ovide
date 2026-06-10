@@ -300,6 +300,7 @@ export default function App() {
               <AccountPane
                 key={layout.activeId!}
                 {...activePaneProps}
+                accounts={accounts} members={members}
                 mobileSection={mobileSection}
                 onAdd={() => setModal({ kind: 'add', accId: layout.activeId! })}
                 onTransfer={() => setModal({ kind: 'transfer', accId: layout.activeId! })}
@@ -313,6 +314,7 @@ export default function App() {
               <AccountPane
                 key={'s' + layout.splitId}
                 {...splitPaneProps}
+                accounts={accounts} members={members}
                 isSplitTarget
                 mobileSection={mobileSection}
                 onAdd={() => setModal({ kind: 'add', accId: layout.splitId! })}

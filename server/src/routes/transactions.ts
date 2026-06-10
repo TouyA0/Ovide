@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { db } from '../db/client';
+import { db, sqlite } from '../db/client';
 import { transactions } from '../db/schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 const router = Router();
@@ -9,16 +9,31 @@ const router = Router();
 // GET /transactions?accountId=xxx
 router.get('/', (req, res) => {
   const { accountId } = req.query;
-  let query = db.select().from(transactions).orderBy(desc(transactions.date), desc(transactions.createdAt));
   if (accountId) {
     const rows = db.select().from(transactions)
       .where(eq(transactions.accountId, accountId as string))
       .orderBy(desc(transactions.date), desc(transactions.createdAt))
       .all();
-    res.json(rows);
+
+    // Enrichit les virements avec linkedAccountId
+    const transferIds = [...new Set(rows.filter(r => r.transferId).map(r => r.transferId!))];
+    let partnerMap: Record<string, string> = {};
+    if (transferIds.length > 0) {
+      const placeholders = transferIds.map(() => '?').join(',');
+      const stmt = sqlite.prepare<unknown[], { transfer_id: string; account_id: string }>(
+        `SELECT transfer_id, account_id FROM transactions WHERE transfer_id IN (${placeholders}) AND account_id != ?`
+      );
+      const partners = stmt.all(...transferIds, accountId as string);
+      partnerMap = Object.fromEntries(partners.map(p => [p.transfer_id, p.account_id]));
+    }
+
+    res.json(rows.map(r => ({
+      ...r,
+      linkedAccountId: r.transferId ? (partnerMap[r.transferId] ?? null) : null,
+    })));
     return;
   }
-  res.json(query.all());
+  res.json(db.select().from(transactions).orderBy(desc(transactions.date), desc(transactions.createdAt)).all());
 });
 
 router.post('/', (req, res) => {

@@ -15,6 +15,8 @@ import type { Account, Member, Category, Transaction, ForecastItem, Recurrence }
 interface Props {
   account: Account;
   member: Member;
+  accounts: Account[];
+  members: Member[];
   categories: Category[];
   isSplitTarget?: boolean;
   mobileSection?: 'transactions' | 'stats';
@@ -26,7 +28,7 @@ interface Props {
   onTogglePrevisions: () => void;
 }
 
-export function AccountPane({ account, member, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onEdit, onDelete, onConfirmForecast, onTogglePrevisions }: Props) {
+export function AccountPane({ account, member, accounts, members, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onEdit, onDelete, onConfirmForecast, onTogglePrevisions }: Props) {
   return (
     <div className={`pane m-active${isSplitTarget ? ' is-split-target' : ''}`} data-section={mobileSection}>
       <div className="pane-inner">
@@ -35,7 +37,7 @@ export function AccountPane({ account, member, categories, isSplitTarget, mobile
           <StatsSection account={account} member={member} categories={categories} />
         </div>
         <div className="m-section-tx">
-          <TransactionList account={account} categories={categories} onEdit={onEdit} onDelete={onDelete} onConfirmForecast={onConfirmForecast} />
+          <TransactionList account={account} accounts={accounts} members={members} categories={categories} onEdit={onEdit} onDelete={onDelete} onConfirmForecast={onConfirmForecast} />
           {account.type === 'courant' && (
             <RecurrencesSection account={account} categories={categories} />
           )}
@@ -219,12 +221,14 @@ function StatsSection({ account, member, categories }: { account: Account; membe
 /* ---- Transaction list ---- */
 const TX_PAGE = 20;
 
-function TransactionList({ account, categories, onEdit, onDelete, onConfirmForecast }: {
-  account: Account; categories: Category[];
+function TransactionList({ account, accounts, members, categories, onEdit, onDelete, onConfirmForecast }: {
+  account: Account; accounts: Account[]; members: Member[]; categories: Category[];
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
   onConfirmForecast: (f: ForecastItem) => void;
 }) {
+  const accountMap = useMemo(() => Object.fromEntries(accounts.map(a => [a.id, a])), [accounts]);
+  const memberMap = useMemo(() => Object.fromEntries(members.map(m => [m.id, m])), [members]);
   const [q, setQ] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense' | 'transfer'>('all');
   const [catFilter, setCatFilter] = useState('all');
@@ -447,8 +451,15 @@ function TransactionList({ account, categories, onEdit, onDelete, onConfirmForec
                   <div className="tx-body">
                     <div className="tx-label">{t.libelle || (c ? c.nom : (isTr ? 'Virement' : 'Opération'))}</div>
                     <div className="tx-meta">
-                      {isTr
-                        ? <><span>Virement {t.dir === 'in' ? 'reçu' : 'émis'}</span>{t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}</>
+                      {isTr ? (() => {
+                        const linkedAcc = t.linkedAccountId ? accountMap[t.linkedAccountId] : null;
+                        const linkedMember = linkedAcc ? memberMap[linkedAcc.memberId] : null;
+                        const arrow = t.dir === 'in' ? '←' : '→';
+                        const label = linkedAcc
+                          ? `${arrow} ${linkedMember ? linkedMember.nom + ' · ' : ''}${linkedAcc.nom}`
+                          : `Virement ${t.dir === 'in' ? 'reçu' : 'émis'}`;
+                        return <><span>{label}</span>{t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}</>;
+                      })()
                         : <><i className="cat-dot" style={{ background: `oklch(0.6 0.12 ${hue})` }} /><span>{c?.nom ?? 'Divers'}</span>{t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}</>}
                     </div>
                   </div>

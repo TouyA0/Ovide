@@ -104,6 +104,7 @@ export interface Transaction {
   transferId: string | null;
   dir: 'in' | 'out' | null;
   recurrenceId: string | null;
+  linkedAccountId: string | null;
 }
 
 export interface Recurrence {
