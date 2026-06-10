@@ -136,6 +136,14 @@ export function useCreateMember() {
   });
 }
 
+export function useUpdateMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof api.updateMember>[1] }) => api.updateMember(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['members'] }),
+  });
+}
+
 export function useCreateRecurrence() {
   const qc = useQueryClient();
   return useMutation({

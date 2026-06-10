@@ -19,9 +19,9 @@ import {
   useMembers, useAccounts, useCategories,
   useCreateTransaction, useUpdateTransaction, useDeleteTransaction,
   useCreateTransfer, useTogglePrevisions, useCreateAccount, useUpdateAccount,
-  useArchiveAccount, useCreateMember,
+  useArchiveAccount, useCreateMember, useUpdateMember,
 } from './hooks/useData';
-import type { Transaction, ForecastItem } from './api/client';
+import type { Transaction, ForecastItem, Member } from './api/client';
 
 type ModalState =
   | { kind: 'add'; accId: string }
@@ -31,9 +31,11 @@ type ModalState =
   | { kind: 'edit-account'; accId: string }
   | { kind: 'archive-account'; accId: string }
   | { kind: 'member' }
+  | { kind: 'edit-member'; member: Member }
   | null;
 
 type CtxState = { x: number; y: number; accId: string } | null;
+type MemberCtxState = { x: number; y: number; member: Member } | null;
 
 export default function App() {
   const layout = useLayout();
@@ -42,6 +44,7 @@ export default function App() {
   const { items: toasts, push: pushToast } = useToasts();
   const [modal, setModal] = useState<ModalState>(null);
   const [ctx, setCtx] = useState<CtxState>(null);
+  const [memberCtx, setMemberCtx] = useState<MemberCtxState>(null);
 
   // Data
   const membersQ = useMembers();
@@ -74,6 +77,7 @@ export default function App() {
   const updateAccount = useUpdateAccount();
   const archiveAccount = useArchiveAccount();
   const createMember = useCreateMember();
+  const updateMember = useUpdateMember();
 
   const handleAddTx = async (data: Parameters<typeof createTx.mutateAsync>[0]) => {
     await createTx.mutateAsync(data);
@@ -137,6 +141,12 @@ export default function App() {
   const handleCreateMember = async (data: Parameters<typeof createMember.mutateAsync>[0]) => {
     await createMember.mutateAsync(data);
     pushToast('Membre ajouté');
+    setModal(null);
+  };
+
+  const handleEditMember = async (id: string, data: Parameters<typeof updateMember.mutateAsync>[0]['data']) => {
+    await updateMember.mutateAsync({ id, data });
+    pushToast('Membre mis à jour');
     setModal(null);
   };
 
@@ -217,6 +227,7 @@ export default function App() {
           members={members} accounts={accounts} activeId={layout.activeId}
           onOpen={layout.openTab}
           onContext={(x, y, accId) => setCtx({ x, y, accId })}
+          onMemberContext={(x, y, m) => setMemberCtx({ x, y, member: m })}
           onAddAccount={(memberId) => setModal({ kind: 'account', memberId })}
           onAddMember={() => setModal({ kind: 'member' })}
         />
@@ -297,13 +308,53 @@ export default function App() {
       {modal?.kind === 'member' && (
         <MemberFormModal onClose={() => setModal(null)} onSave={handleCreateMember} />
       )}
+      {modal?.kind === 'edit-member' && (
+        <MemberFormModal
+          member={modal.member}
+          onClose={() => setModal(null)}
+          onSave={data => handleEditMember(modal.member.id, data)}
+        />
+      )}
 
-      {/* Context menu */}
+      {/* Context menu — compte */}
       {ctx && (() => {
         const a = accounts.find(x => x.id === ctx.accId);
         const m = members.find(x => x.id === a?.memberId);
         if (!a || !m) return null;
-        return <ContextMenu ctx={ctx} account={a} member={m} actions={ctxActions(ctx.accId)} onClose={() => setCtx(null)} />;
+        return (
+          <ContextMenu
+            ctx={ctx}
+            header={{
+              title: a.nom,
+              subtitle: m.nom + (a.banque ? ` · ${a.banque}` : ''),
+              color: `var(--m-${m.couleur})`,
+              initiales: m.initiales,
+            }}
+            actions={ctxActions(ctx.accId)}
+            onClose={() => setCtx(null)}
+          />
+        );
+      })()}
+
+      {/* Context menu — membre */}
+      {memberCtx && (() => {
+        const m = memberCtx.member;
+        const totalAcc = accounts.filter(a => a.memberId === m.id && !a.archive).length;
+        return (
+          <ContextMenu
+            ctx={memberCtx}
+            header={{
+              title: m.nom,
+              subtitle: `${totalAcc} compte${totalAcc > 1 ? 's' : ''}`,
+              color: `var(--m-${m.couleur})`,
+              initiales: m.initiales,
+            }}
+            actions={[
+              { icon: <PenLine size={16} />, label: 'Modifier', fn: () => setModal({ kind: 'edit-member', member: m }) },
+            ]}
+            onClose={() => setMemberCtx(null)}
+          />
+        );
       })()}
 
       <Toasts items={toasts} />

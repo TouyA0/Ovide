@@ -9,11 +9,12 @@ interface Props {
   activeId: string | null;
   onOpen: (id: string) => void;
   onContext: (x: number, y: number, accId: string) => void;
+  onMemberContext: (x: number, y: number, member: Member) => void;
   onAddAccount: (memberId: string) => void;
   onAddMember: () => void;
 }
 
-export function Sidebar({ members, accounts, activeId, onOpen, onContext, onAddAccount, onAddMember }: Props) {
+export function Sidebar({ members, accounts, activeId, onOpen, onContext, onMemberContext, onAddAccount, onAddMember }: Props) {
   const [open, setOpen] = useState<Record<string, boolean>>(
     () => Object.fromEntries(members.map(m => [m.id, true]))
   );
@@ -38,7 +39,11 @@ export function Sidebar({ members, accounts, activeId, onOpen, onContext, onAddA
 
           return (
             <div className="member-group" key={m.id}>
-              <button className="member-head" onClick={() => setOpen(o => ({ ...o, [m.id]: !o[m.id] }))}>
+              <button
+                className="member-head"
+                onClick={() => setOpen(o => ({ ...o, [m.id]: !o[m.id] }))}
+                onContextMenu={e => { e.preventDefault(); onMemberContext(e.clientX, e.clientY, m); }}
+              >
                 <span className="avatar" style={{ background: `var(--m-${m.couleur})` }}>{m.initiales}</span>
                 <span style={{ flex: 1, textAlign: 'left' }}>{m.nom}</span>
                 <span className="member-total tnum">{fmtEurShort(total)}</span>
@@ -56,7 +61,6 @@ export function Sidebar({ members, accounts, activeId, onOpen, onContext, onAddA
                     </button>
                   ))}
 
-                  {/* Comptes archivés */}
                   {archived.length > 0 && (
                     <>
                       <button
