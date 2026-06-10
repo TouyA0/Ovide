@@ -53,6 +53,12 @@ export const imports = sqliteTable('imports', {
   transactionCount: integer('transaction_count').notNull().default(0),
 });
 
+export const recurrenceSkips = sqliteTable('recurrence_skips', {
+  id: text('id').primaryKey(),
+  recurrenceId: text('recurrence_id').notNull(),
+  monthPrefix: text('month_prefix').notNull(), // 'YYYY-MM'
+});
+
 export const recurrences = sqliteTable('recurrences', {
   id: text('id').primaryKey(),
   accountId: text('account_id').notNull().references(() => accounts.id),

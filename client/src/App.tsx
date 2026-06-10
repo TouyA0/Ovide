@@ -24,6 +24,7 @@ import {
   useCreateTransfer, useTogglePrevisions, useCreateAccount, useUpdateAccount, useCreateImport,
   useArchiveAccount, useCreateMember, useUpdateMember, useDeleteMember,
   useCreateCategory, useUpdateCategory, useDeleteCategory,
+  useSkipRecurrence, useUnskipRecurrence,
 } from './hooks/useData';
 import type { Transaction, ForecastItem, Member } from './api/client';
 
@@ -90,6 +91,8 @@ export default function App() {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const skipRecurrence = useSkipRecurrence();
+  const unskipRecurrence = useUnskipRecurrence();
 
   const handleAddTx = async (data: Parameters<typeof createTx.mutateAsync>[0]) => {
     await createTx.mutateAsync(data);
@@ -122,8 +125,17 @@ export default function App() {
     setModal(null);
   };
 
-  const handleConfirmForecast = async (f: ForecastItem): Promise<string> => {
-    const { id } = await createTx.mutateAsync({ accountId: f.accountId, type: f.sens as 'income' | 'expense', montant: f.montant, categorieId: f.categorieId ?? undefined, libelle: f.libelle, date: f.date, note: '', recurrenceId: f.id });
+  const handleSkipForecast = async (f: ForecastItem) => {
+    const monthPrefix = f.date.slice(0, 7);
+    await skipRecurrence.mutateAsync({ id: f.id, monthPrefix });
+    pushToast(`Ignoré pour ${monthPrefix.split('-').reverse().join('/')}`, 'calendar-clock', {
+      label: 'Annuler',
+      fn: () => unskipRecurrence.mutateAsync({ id: f.id, monthPrefix }),
+    });
+  };
+
+  const handleConfirmForecast = async (f: ForecastItem, date?: string): Promise<string> => {
+    const { id } = await createTx.mutateAsync({ accountId: f.accountId, type: f.sens as 'income' | 'expense', montant: f.montant, categorieId: f.categorieId ?? undefined, libelle: f.libelle, date: date ?? f.date, note: '', recurrenceId: f.id });
     pushToast(`${f.libelle || 'Opération'} confirmée`, 'check-circle-2', {
       label: 'Annuler',
       fn: () => deleteTx.mutateAsync(id),
@@ -326,6 +338,7 @@ export default function App() {
                 onEdit={tx => setModal({ kind: 'edit', tx })}
                 onDelete={handleDeleteTx}
                 onConfirmForecast={handleConfirmForecast}
+                onSkipForecast={handleSkipForecast}
                 onTogglePrevisions={() => handleTogglePrev(layout.activeId!)}
               />
             )}
@@ -342,6 +355,7 @@ export default function App() {
                 onEdit={tx => setModal({ kind: 'edit', tx })}
                 onDelete={handleDeleteTx}
                 onConfirmForecast={handleConfirmForecast}
+                onSkipForecast={handleSkipForecast}
                 onTogglePrevisions={() => handleTogglePrev(layout.splitId!)}
               />
             )}

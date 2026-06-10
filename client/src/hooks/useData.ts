@@ -296,6 +296,26 @@ export function useDeleteRecurrence() {
   });
 }
 
+export function useSkipRecurrence() {
+  const qc = useQueryClient();
+  const onError = useOnError();
+  return useMutation({
+    mutationFn: ({ id, monthPrefix }: { id: string; monthPrefix: string }) => api.skipRecurrence(id, monthPrefix),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['forecast'] }),
+    onError,
+  });
+}
+
+export function useUnskipRecurrence() {
+  const qc = useQueryClient();
+  const onError = useOnError();
+  return useMutation({
+    mutationFn: ({ id, monthPrefix }: { id: string; monthPrefix: string }) => api.unskipRecurrence(id, monthPrefix),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['forecast'] }),
+    onError,
+  });
+}
+
 export function useReorderRecurrences() {
   const qc = useQueryClient();
   return useMutation({

@@ -397,6 +397,35 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .btn-confirm:hover { background: var(--accent-strong); }
 .btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Bloc "en retard" ── */
+.forecast-block.forecast-overdue { border-color: color-mix(in srgb, var(--neg) 35%, var(--line)); }
+.forecast-block.forecast-overdue .forecast-header {
+  background: color-mix(in srgb, var(--neg) 8%, var(--surface-2));
+  color: var(--neg);
+}
+.forecast-block.forecast-overdue .forecast-header svg { opacity: 1; }
+.tx-row.projected.overdue .tx-label { color: var(--text); }
+/* ── Date stepper ── */
+.date-stepper {
+  display: inline-flex; align-items: center; gap: 1px;
+  border: 1.5px solid var(--line); border-radius: 8px;
+  background: var(--surface); height: 30px; padding: 0 2px; flex-shrink: 0;
+}
+.date-step-btn {
+  display: grid; place-items: center; width: 22px; height: 22px;
+  border-radius: 5px; color: var(--text-3); background: transparent; flex-shrink: 0;
+}
+.date-step-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.date-step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.date-step-val {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  padding: 0 5px; min-width: 96px; text-align: center; white-space: nowrap;
+}
+.overdue-skip-btn { color: var(--text-3); flex-shrink: 0; }
+.overdue-skip-btn:hover:not(:disabled) { color: var(--neg); border-color: var(--neg); }
+.overdue-skip-btn.overdue-skip-confirm { color: var(--neg); border-color: var(--neg); }
+
 .tx-cancel-rec {
   flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; border: none;
   background: var(--surface-2); color: var(--text-3); display: grid; place-items: center; cursor: pointer;

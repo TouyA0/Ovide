@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Plus, ArrowLeftRight, Eye, EyeOff, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock, GripVertical, Upload, Trash2, FileText, Loader2 } from 'lucide-react';
+import { Plus, ArrowLeftRight, Eye, EyeOff, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock, GripVertical, Upload, Trash2, FileText, Loader2, ChevronLeft, ChevronRight, Ban } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { BalanceChart } from '../charts/BalanceChart';
 import { IncomeExpenseBars } from '../charts/IncomeExpenseBars';
@@ -26,11 +26,12 @@ interface Props {
   onImport: () => void;
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
-  onConfirmForecast: (f: ForecastItem) => Promise<string>;
+  onConfirmForecast: (f: ForecastItem, date?: string) => Promise<string>;
+  onSkipForecast: (f: ForecastItem) => Promise<void>;
   onTogglePrevisions: () => void;
 }
 
-export function AccountPane({ account, member, accounts, members, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onImport, onEdit, onDelete, onConfirmForecast, onTogglePrevisions }: Props) {
+export function AccountPane({ account, member, accounts, members, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onImport, onEdit, onDelete, onConfirmForecast, onSkipForecast, onTogglePrevisions }: Props) {
   return (
     <div className={`pane m-active${isSplitTarget ? ' is-split-target' : ''}`} data-section={mobileSection}>
       <div className="pane-inner">
@@ -39,7 +40,7 @@ export function AccountPane({ account, member, accounts, members, categories, is
           <StatsSection account={account} member={member} categories={categories} />
         </div>
         <div className="m-section-tx">
-          <TransactionList account={account} accounts={accounts} members={members} categories={categories} onEdit={onEdit} onDelete={onDelete} onConfirmForecast={onConfirmForecast} />
+          <TransactionList account={account} accounts={accounts} members={members} categories={categories} onEdit={onEdit} onDelete={onDelete} onConfirmForecast={onConfirmForecast} onSkipForecast={onSkipForecast} />
           {account.type === 'courant' && (
             <RecurrencesSection account={account} categories={categories} />
           )}
@@ -222,14 +223,39 @@ function StatsSection({ account, member, categories }: { account: Account; membe
   );
 }
 
+/* ---- Date stepper (← 3 juin 2026 →) ---- */
+function DateStepper({ value, min, max, onChange }: { value: string; min?: string; max?: string; onChange: (d: string) => void }) {
+  const adjust = (days: number) => {
+    const d = new Date(value + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() + days);
+    const next = d.toISOString().slice(0, 10);
+    if (min && next < min) return;
+    if (max && next > max) return;
+    onChange(next);
+  };
+  const [y, m, d] = value.split('-').map(Number);
+  return (
+    <div className="date-stepper">
+      <button className="date-step-btn" type="button" onClick={() => adjust(-1)} disabled={!!min && value <= min}>
+        <ChevronLeft size={13} />
+      </button>
+      <span className="date-step-val">{d} {MONTHS_FULL[m - 1]} {y}</span>
+      <button className="date-step-btn" type="button" onClick={() => adjust(1)} disabled={!!max && value >= max}>
+        <ChevronRight size={13} />
+      </button>
+    </div>
+  );
+}
+
 /* ---- Transaction list ---- */
 const TX_PAGE = 20;
 
-function TransactionList({ account, accounts, members, categories, onEdit, onDelete, onConfirmForecast }: {
+function TransactionList({ account, accounts, members, categories, onEdit, onDelete, onConfirmForecast, onSkipForecast }: {
   account: Account; accounts: Account[]; members: Member[]; categories: Category[];
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
-  onConfirmForecast: (f: ForecastItem) => Promise<string>;
+  onConfirmForecast: (f: ForecastItem, date?: string) => Promise<string>;
+  onSkipForecast: (f: ForecastItem) => Promise<void>;
 }) {
   const accountMap = useMemo(() => Object.fromEntries(accounts.map(a => [a.id, a])), [accounts]);
   const memberMap = useMemo(() => Object.fromEntries(members.map(m => [m.id, m])), [members]);
@@ -238,37 +264,58 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
   const [catFilter, setCatFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState('all');
   const [limit, setLimit] = useState(TX_PAGE);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
+  // Clé composée `${recurrenceId}|${date}` — distingue le même récurrent sur plusieurs mois
+  const [confirmingKey, setConfirmingKey] = useState<string | null>(null);
+  const [confirmedKeys, setConfirmedKeys] = useState<Set<string>>(new Set());
+  const [skippingKey, setSkippingKey] = useState<string | null>(null);
+  const [confirmSkipKey, setConfirmSkipKey] = useState<string | null>(null);
+  // Date choisie pour chaque item en retard (clé = `${id}|${date}`)
+  const [confirmDates, setConfirmDates] = useState<Record<string, string>>({});
   const [flashId, setFlashId] = useState<string | null>(null);
   const confirmingRef = useRef(false);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const fKey = (f: ForecastItem) => `${f.id}|${f.date}`;
+
   const handleConfirm = async (f: ForecastItem) => {
     if (confirmingRef.current) return;
+    const key = fKey(f);
     confirmingRef.current = true;
-    setConfirmingId(f.id);
-    setConfirmedIds(prev => new Set([...prev, f.id]));
+    setConfirmingKey(key);
+    setConfirmedKeys(prev => new Set([...prev, key]));
+    // Pour les items en retard, on passe la date choisie (défaut = date prévue)
+    // Pour les items à venir, on ne passe rien (App utilisera f.date)
+    const isOverdue = f.date <= today;
+    const dateOverride = isOverdue ? (confirmDates[key] ?? f.date) : undefined;
     try {
-      const newId = await onConfirmForecast(f);
+      const newId = await onConfirmForecast(f, dateOverride);
       setFlashId(newId);
       setTimeout(() => setFlashId(null), 1800);
     } finally {
       confirmingRef.current = false;
-      setConfirmingId(null);
+      setConfirmingKey(null);
     }
+  };
+
+  const handleSkip = async (f: ForecastItem) => {
+    if (skippingKey) return;
+    const key = fKey(f);
+    setSkippingKey(key);
+    setConfirmedKeys(prev => new Set([...prev, key]));
+    try { await onSkipForecast(f); } finally { setSkippingKey(null); }
   };
 
   const txQuery = useTransactions(account.id);
   const forecastQuery = useForecast(account.id);
   const catMap = useMemo(() => Object.fromEntries(categories.map(c => [c.id, c])), [categories]);
 
-  // Si un item revient dans le forecast (ex: undo), on le retire de confirmedIds
+  // Si un item revient dans le forecast (ex: undo), on le retire de confirmedKeys
   useEffect(() => {
     if (!forecastQuery.data) return;
-    const backIds = new Set(forecastQuery.data.map(f => f.id));
-    setConfirmedIds(prev => {
+    const backKeys = new Set(forecastQuery.data.map(fKey));
+    setConfirmedKeys(prev => {
       const next = new Set(prev);
-      for (const id of prev) if (backIds.has(id)) next.delete(id);
+      for (const k of prev) if (backKeys.has(k)) next.delete(k);
       return next.size === prev.size ? prev : next;
     });
   }, [forecastQuery.data]);
@@ -314,14 +361,17 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
     return Object.keys(g).sort((a, b) => b.localeCompare(a)).map(date => ({ date, items: g[date] }));
   }, [displayed]);
 
-  // Forecasts filtered to match active type / category filters, hidden when browsing a past month
+  // Forecasts filtrés selon les filtres actifs ; cachés quand on parcourt un mois précis
   const visibleForecast = useMemo(() => {
     if (monthFilter !== 'all' || typeFilter === 'transfer') return [];
-    let result = forecast.filter(f => !confirmedIds.has(f.id));
+    let result = forecast.filter(f => !confirmedKeys.has(fKey(f)));
     if (typeFilter !== 'all') result = result.filter(f => f.sens === typeFilter);
     if (catFilter !== 'all') result = result.filter(f => f.categorieId === catFilter);
     return result;
-  }, [forecast, typeFilter, catFilter, monthFilter, confirmedIds]);
+  }, [forecast, typeFilter, catFilter, monthFilter, confirmedKeys]);
+
+  const overdueItems = useMemo(() => visibleForecast.filter(f => f.date <= today), [visibleForecast, today]);
+  const upcomingItems = useMemo(() => visibleForecast.filter(f => f.date > today), [visibleForecast, today]);
 
 
 
@@ -366,14 +416,77 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
         )}
       </div>
 
-      {/* Upcoming forecasts */}
-      {visibleForecast.length > 0 && (
+      {/* Récurrences en retard (non confirmées des jours/mois passés) */}
+      {overdueItems.length > 0 && (
+        <div className="forecast-block forecast-overdue">
+          <div className="forecast-header">
+            <CalendarClock size={13} /> En retard · {overdueItems.length} non confirmée{overdueItems.length > 1 ? 's' : ''}
+          </div>
+          <div className="tx-list">
+            {overdueItems.map(f => {
+              const key = fKey(f);
+              const c = f.categorieId ? catMap[f.categorieId] : null;
+              const IconComp = c ? (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
+                c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
+              ] : null;
+              const [, fM, fD] = f.date.split('-').map(Number);
+              const label = f.libelle || c?.nom || 'Prévu';
+              const chosenDate = confirmDates[key] ?? f.date;
+              return (
+                <div className="tx-row projected overdue" key={key}>
+                  <span className="tx-stamp">
+                    <span className="tx-stamp-d">{fD}</span>
+                    <span className="tx-stamp-m">{MONTHS[fM - 1]}</span>
+                  </span>
+                  <span className="tx-ico">{IconComp ? <IconComp size={17} /> : null}</span>
+                  <div className="tx-body">
+                    <div className="tx-label">{label}</div>
+                    <div className="tx-meta">
+                      <i className="cat-dot" style={{ background: c ? `oklch(0.6 0.12 ${c.hue})` : 'var(--text-3)' }} />
+                      <span>{c?.nom ?? 'Divers'}</span>
+                    </div>
+                  </div>
+                  <div className={`tx-amount ${f.sens === 'income' ? 'inc' : 'exp'}`} style={{ minWidth: 48, textAlign: 'right' }}>
+                    {f.sens === 'income' ? '+' : '−'}{fmtEurShort(f.montant)}
+                  </div>
+                  <DateStepper
+                    value={chosenDate}
+                    max={today}
+                    onChange={d => setConfirmDates(prev => ({ ...prev, [key]: d }))}
+                  />
+                  {confirmSkipKey === key ? (
+                    <button className="btn ghost sm overdue-skip-btn overdue-skip-confirm"
+                      disabled={!!confirmingKey || !!skippingKey}
+                      onClick={() => { setConfirmSkipKey(null); handleSkip(f); }}>
+                      <Ban size={13} /> Confirmer ?
+                    </button>
+                  ) : (
+                    <button className="btn ghost sm overdue-skip-btn"
+                      disabled={!!confirmingKey || !!skippingKey}
+                      onClick={() => setConfirmSkipKey(key)}>
+                      <Ban size={13} /> Passer
+                    </button>
+                  )}
+                  <button className="btn-confirm" disabled={!!confirmingKey || !!skippingKey}
+                    onClick={() => handleConfirm(f)}>
+                    <Check size={14} /> {confirmingKey === key ? '…' : 'Confirmer'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Récurrences à venir ce mois-ci */}
+      {upcomingItems.length > 0 && (
         <div className="forecast-block">
           <div className="forecast-header">
             <CalendarClock size={13} /> À venir ce mois-ci
           </div>
           <div className="tx-list">
-            {visibleForecast.map(f => {
+            {upcomingItems.map(f => {
+              const key = fKey(f);
               const c = f.categorieId ? catMap[f.categorieId] : null;
               const IconComp = c ? (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
                 c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
@@ -381,7 +494,7 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
               const [, fM, fD] = f.date.split('-').map(Number);
               const label = f.libelle || c?.nom || 'Prévu';
               return (
-                <div className="tx-row projected" key={f.id}>
+                <div className="tx-row projected" key={key}>
                   <span className="tx-stamp">
                     <span className="tx-stamp-d">{fD}</span>
                     <span className="tx-stamp-m">{MONTHS[fM - 1]}</span>
@@ -397,8 +510,8 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
                   <div className={`tx-amount ${f.sens === 'income' ? 'inc' : 'exp'}`} style={{ marginRight: 12 }}>
                     {f.sens === 'income' ? '+' : '−'}{fmtEurShort(f.montant)}
                   </div>
-                  <button className="btn-confirm" disabled={!!confirmingId} onClick={() => handleConfirm(f)}>
-                    <Check size={14} /> {confirmingId === f.id ? '…' : 'Confirmer'}
+                  <button className="btn-confirm" disabled={!!confirmingKey} onClick={() => handleConfirm(f)}>
+                    <Check size={14} /> {confirmingKey === key ? '…' : 'Confirmer'}
                   </button>
                 </div>
               );

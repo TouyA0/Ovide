@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db/client';
-import { recurrences } from '../db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { recurrences, recurrenceSkips } from '../db/schema';
+import { eq, asc, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 const router = Router();
@@ -43,7 +43,35 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
+  db.delete(recurrenceSkips).where(eq(recurrenceSkips.recurrenceId, req.params.id)).run();
   db.delete(recurrences).where(eq(recurrences.id, req.params.id)).run();
+  res.json({ ok: true });
+});
+
+// POST /:id/skip — ignorer cette récurrence pour un mois donné
+router.post('/:id/skip', (req, res) => {
+  const { monthPrefix } = req.body as { monthPrefix: string };
+  if (!monthPrefix || !/^\d{4}-\d{2}$/.test(monthPrefix)) {
+    res.status(400).json({ error: 'monthPrefix requis (YYYY-MM)' });
+    return;
+  }
+  // Idempotent : on ne duplique pas si le skip existe déjà
+  const exists = db.select().from(recurrenceSkips)
+    .where(and(eq(recurrenceSkips.recurrenceId, req.params.id), eq(recurrenceSkips.monthPrefix, monthPrefix)))
+    .get();
+  if (!exists) {
+    db.insert(recurrenceSkips).values({ id: 'sk_' + randomUUID().slice(0, 8), recurrenceId: req.params.id, monthPrefix }).run();
+  }
+  res.json({ ok: true });
+});
+
+// DELETE /:id/skip?monthPrefix=YYYY-MM — annuler un skip
+router.delete('/:id/skip', (req, res) => {
+  const monthPrefix = req.query.monthPrefix as string;
+  if (!monthPrefix) { res.status(400).json({ error: 'monthPrefix requis' }); return; }
+  db.delete(recurrenceSkips)
+    .where(and(eq(recurrenceSkips.recurrenceId, req.params.id), eq(recurrenceSkips.monthPrefix, monthPrefix)))
+    .run();
   res.json({ ok: true });
 });
 

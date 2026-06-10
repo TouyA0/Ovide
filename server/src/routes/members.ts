@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db/client';
-import { members, accounts, transactions, recurrences, imports } from '../db/schema';
+import { members, accounts, transactions, recurrences, recurrenceSkips, imports } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { computeBalance } from '../services/balance';
@@ -39,6 +39,11 @@ router.delete('/:id', (req, res) => {
   db.transaction(tx => {
     for (const acc of accs) {
       tx.delete(transactions).where(eq(transactions.accountId, acc.id)).run();
+      // Supprimer les skips des récurrences de ce compte
+      const recs = db.select({ id: recurrences.id }).from(recurrences).where(eq(recurrences.accountId, acc.id)).all();
+      for (const r of recs) {
+        tx.delete(recurrenceSkips).where(eq(recurrenceSkips.recurrenceId, r.id)).run();
+      }
       tx.delete(recurrences).where(eq(recurrences.accountId, acc.id)).run();
       tx.delete(imports).where(eq(imports.accountId, acc.id)).run();
     }

@@ -49,6 +49,8 @@ export const api = {
   updateRecurrence: (id: string, data: Partial<Recurrence>) => request('/recurrences/' + id, { method: 'PUT', body: JSON.stringify(data) }),
   deleteRecurrence: (id: string) => request('/recurrences/' + id, { method: 'DELETE' }),
   reorderRecurrences: (ids: string[]) => request('/recurrences/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
+  skipRecurrence: (id: string, monthPrefix: string) => request('/recurrences/' + id + '/skip', { method: 'POST', body: JSON.stringify({ monthPrefix }) }),
+  unskipRecurrence: (id: string, monthPrefix: string) => request('/recurrences/' + id + '/skip?monthPrefix=' + monthPrefix, { method: 'DELETE' }),
 
   // Imports
   getImports: (accountId: string) => request<BankImport[]>('/imports?accountId=' + accountId),

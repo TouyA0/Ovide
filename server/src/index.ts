@@ -34,6 +34,11 @@ try { sqlite.exec(`CREATE TABLE IF NOT EXISTS imports (
   imported_at TEXT NOT NULL,
   transaction_count INTEGER NOT NULL DEFAULT 0
 )`); } catch { /* déjà présente */ }
+try { sqlite.exec(`CREATE TABLE IF NOT EXISTS recurrence_skips (
+  id TEXT PRIMARY KEY,
+  recurrence_id TEXT NOT NULL,
+  month_prefix TEXT NOT NULL
+)`); } catch { /* déjà présente */ }
 
 app.use(express.json());
 
