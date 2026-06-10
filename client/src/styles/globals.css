@@ -340,15 +340,19 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .filter-sel:hover { border-color: var(--line-strong); color: var(--text); }
 .filter-sel:focus { border-color: var(--accent); color: var(--text); }
 
-.tx-day-label {
-  font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em;
-  padding: 16px 4px 6px; display: flex; align-items: center; justify-content: space-between;
+/* date column inline dans les rows */
+.tx-group + .tx-group { margin-top: 2px; }
+.tx-stamp {
+  flex: 0 0 auto; width: 32px; display: flex; flex-direction: column;
+  align-items: center; gap: 1px; line-height: 1;
 }
-.tx-day-label .day-sum { font-weight: 600; letter-spacing: 0; text-transform: none; }
+.tx-stamp-d { font-size: 13.5px; font-weight: 700; color: var(--text-2); }
+.tx-stamp-m { font-size: 10px; font-weight: 600; color: var(--text-3); }
+.tx-stamp.blank { visibility: hidden; }
 
 .tx-list { display: flex; flex-direction: column; }
 .tx-row {
-  display: flex; align-items: center; gap: 13px; padding: 11px 12px; border-radius: var(--r-md);
+  display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: var(--r-md);
   width: 100%; text-align: left; position: relative; transition: background .12s ease;
 }
 .tx-row:hover { background: var(--surface-2); }
@@ -357,25 +361,45 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .tx-label { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tx-meta { font-size: 12px; color: var(--text-3); font-weight: 500; display: flex; align-items: center; gap: 6px; margin-top: 1px; }
 .tx-meta .cat-dot { width: 6px; height: 6px; border-radius: 50%; }
+.tx-meta-sep { color: var(--line-strong); }
+.tx-meta-note { font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tx-amount { font-size: 14.5px; font-weight: 700; flex: 0 0 auto; }
 .tx-amount.inc { color: var(--pos); }
 .tx-amount.exp { color: var(--text); }
 .tx-edit-hint { color: var(--text-3); opacity: 0; transition: opacity .12s ease; }
 .tx-row:hover .tx-edit-hint { opacity: 1; }
 
-.tx-row.projected { opacity: .96; }
-.tx-row.projected .tx-ico { border: 1.5px dashed var(--line-strong); background: transparent !important; color: var(--text-3); }
-.tx-row.projected .tx-label { color: var(--text-2); }
-.proj-tag {
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-  color: var(--accent-strong); background: var(--accent-soft); padding: 1px 6px; border-radius: 20px;
+/* ── Bloc prévisions à venir ── */
+.forecast-block {
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  overflow: hidden; margin-bottom: 14px;
 }
+.forecast-header {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 14px 8px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  font-size: 11.5px; font-weight: 700; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.forecast-header svg { opacity: .7; }
+.tx-row.projected { background: transparent; }
+.tx-row.projected:hover { background: var(--surface-2); }
+.tx-row.projected .tx-ico {
+  border: 1.5px dashed var(--line-strong);
+  background: transparent !important; color: var(--text-3);
+}
+.tx-row.projected .tx-label { color: var(--text-2); }
 .btn-confirm {
   display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 8px;
   font-size: 12.5px; font-weight: 700; background: var(--accent); color: var(--on-accent); flex: 0 0 auto;
   box-shadow: var(--shadow-sm);
 }
 .btn-confirm:hover { background: var(--accent-strong); }
+/* boutons voir-plus / voir-moins */
+.tx-more-row {
+  display: flex; gap: 8px; margin-top: 8px;
+}
 
 .empty { text-align: center; padding: 50px 20px; color: var(--text-3); }
 .empty .e-ic { width: 52px; height: 52px; border-radius: 16px; background: var(--surface-2); display: grid; place-items: center; margin: 0 auto 14px; color: var(--text-3); }

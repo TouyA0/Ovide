@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, ArrowLeftRight, Eye, EyeOff, Download, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw } from 'lucide-react';
+import { Plus, ArrowLeftRight, Eye, EyeOff, Download, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { BalanceChart } from '../charts/BalanceChart';
 import { IncomeExpenseBars } from '../charts/IncomeExpenseBars';
@@ -9,7 +9,7 @@ import {
   useTransactions, useBalanceSeries, useBars, useComparison, useDonut, useForecast,
   useRecurrences, useCreateRecurrence, useUpdateRecurrence, useDeleteRecurrence,
 } from '../../hooks/useData';
-import { fmtEur, fmtEurShort, fmtDateLong, fmtChange, pctDelta, relDay, MONTHS_FULL, MONTHS } from '../../utils/format';
+import { fmtEur, fmtEurShort, fmtChange, pctDelta, MONTHS_FULL, MONTHS } from '../../utils/format';
 import type { Account, Member, Category, Transaction, ForecastItem, Recurrence } from '../../api/client';
 
 interface Props {
@@ -255,11 +255,7 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
     return result;
   }, [forecast, typeFilter, catFilter, monthFilter]);
 
-  function signed(t: Transaction) {
-    if (t.type === 'income') return t.montant;
-    if (t.type === 'expense') return -t.montant;
-    return t.dir === 'in' ? t.montant : -t.montant;
-  }
+
 
   return (
     <div className="tx-section">
@@ -304,20 +300,31 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
 
       {/* Upcoming forecasts */}
       {visibleForecast.length > 0 && (
-        <div style={{ marginBottom: 6 }}>
-          <div className="tx-day-label"><span>À venir ce mois-ci · projeté</span></div>
+        <div className="forecast-block">
+          <div className="forecast-header">
+            <CalendarClock size={13} /> À venir ce mois-ci
+          </div>
           <div className="tx-list">
             {visibleForecast.map(f => {
               const c = f.categorieId ? catMap[f.categorieId] : null;
               const IconComp = c ? (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
                 c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
               ] : null;
+              const [, fM, fD] = f.date.split('-').map(Number);
+              const label = f.libelle || c?.nom || 'Prévu';
               return (
                 <div className="tx-row projected" key={f.id}>
+                  <span className="tx-stamp">
+                    <span className="tx-stamp-d">{fD}</span>
+                    <span className="tx-stamp-m">{MONTHS[fM - 1]}</span>
+                  </span>
                   <span className="tx-ico">{IconComp ? <IconComp size={17} /> : null}</span>
                   <div className="tx-body">
-                    <div className="tx-label">{f.libelle} <span className="proj-tag">prévu</span></div>
-                    <div className="tx-meta">{fmtDateLong(f.date)} · {c?.nom ?? ''}</div>
+                    <div className="tx-label">{label}</div>
+                    <div className="tx-meta">
+                      <i className="cat-dot" style={{ background: c ? `oklch(0.6 0.12 ${c.hue})` : 'var(--text-3)' }} />
+                      <span>{c?.nom ?? 'Divers'}</span>
+                    </div>
                   </div>
                   <div className={`tx-amount ${f.sens === 'income' ? 'inc' : 'exp'}`} style={{ marginRight: 12 }}>
                     {f.sens === 'income' ? '+' : '−'}{fmtEurShort(f.montant)}
@@ -340,57 +347,70 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
         </div>
       )}
 
-      {/* Transaction groups */}
-      {groups.map(grp => {
-        const daySum = grp.items.reduce((s, t) => s + (t.type === 'transfer' ? 0 : signed(t)), 0);
-        return (
-          <div key={grp.date}>
-            <div className="tx-day-label">
-              <span>{relDay(grp.date)}</span>
-              {daySum !== 0 && <span className="day-sum tnum" style={{ color: daySum > 0 ? 'var(--pos)' : 'var(--text-3)' }}>{daySum > 0 ? '+' : ''}{fmtEur(daySum)}</span>}
-            </div>
-            <div className="tx-list">
-              {grp.items.map(t => {
-                const c = t.categorieId ? catMap[t.categorieId] : null;
-                const isTr = t.type === 'transfer';
-                const hue = c?.hue ?? 250;
-                const IconComp = c ? (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
-                  c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
-                ] : null;
-                return (
-                  <button className="tx-row" key={t.id} onClick={() => onEdit(t)}>
-                    <span className="tx-ico" style={{ background: isTr ? 'var(--surface-2)' : `oklch(0.6 0.12 ${hue} / 0.13)`, color: isTr ? 'var(--text-2)' : `oklch(0.5 0.13 ${hue})` }}>
-                      {isTr ? <ArrowLeftRight size={17} /> : (IconComp ? <IconComp size={17} /> : null)}
-                    </span>
-                    <div className="tx-body">
-                      <div className="tx-label">{t.libelle || (c ? c.nom : (isTr ? 'Virement' : 'Opération'))}</div>
-                      <div className="tx-meta">
-                        {isTr ? <span>Virement {t.dir === 'in' ? 'reçu' : 'émis'}</span>
-                          : <><i className="cat-dot" style={{ background: `oklch(0.6 0.12 ${hue})` }} /><span>{c?.nom ?? 'Divers'}</span></>}
-                      </div>
+      {/* Transaction groups — date inline en colonne gauche, sans header séparé */}
+      {groups.map(grp => (
+        <div key={grp.date} className="tx-group">
+          <div className="tx-list">
+            {grp.items.map((t, ti) => {
+              const c = t.categorieId ? catMap[t.categorieId] : null;
+              const isTr = t.type === 'transfer';
+              const hue = c?.hue ?? 250;
+              const IconComp = c ? (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
+                c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
+              ] : null;
+              const [, txM, txD] = t.date.split('-').map(Number);
+              return (
+                <button className="tx-row" key={t.id} onClick={() => onEdit(t)}>
+                  {/* Date stamp — visible uniquement sur la 1re ligne du groupe */}
+                  <span className={`tx-stamp${ti > 0 ? ' blank' : ''}`}>
+                    <span className="tx-stamp-d">{txD}</span>
+                    <span className="tx-stamp-m">{MONTHS[txM - 1]}</span>
+                  </span>
+                  <span className="tx-ico" style={{ background: isTr ? 'var(--surface-2)' : `oklch(0.6 0.12 ${hue} / 0.13)`, color: isTr ? 'var(--text-2)' : `oklch(0.5 0.13 ${hue})` }}>
+                    {isTr ? <ArrowLeftRight size={17} /> : (IconComp ? <IconComp size={17} /> : null)}
+                  </span>
+                  <div className="tx-body">
+                    <div className="tx-label">{t.libelle || (c ? c.nom : (isTr ? 'Virement' : 'Opération'))}</div>
+                    <div className="tx-meta">
+                      {isTr
+                        ? <><span>Virement {t.dir === 'in' ? 'reçu' : 'émis'}</span>{t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}</>
+                        : <><i className="cat-dot" style={{ background: `oklch(0.6 0.12 ${hue})` }} /><span>{c?.nom ?? 'Divers'}</span>{t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}</>}
                     </div>
-                    <span className={`tx-amount ${t.type === 'income' ? 'inc' : isTr ? '' : 'exp'}`}
-                      style={isTr ? { color: t.dir === 'in' ? 'var(--pos)' : 'var(--text-2)' } : {}}>
-                      {t.type === 'income' ? '+' : t.type === 'expense' ? '−' : (t.dir === 'in' ? '+' : '−')}{fmtEur(t.montant)}
-                    </span>
-                    <span className="tx-edit-hint"><LucideIcons.ChevronRight size={16} /></span>
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                  <span className={`tx-amount ${t.type === 'income' ? 'inc' : isTr ? '' : 'exp'}`}
+                    style={isTr ? { color: t.dir === 'in' ? 'var(--pos)' : 'var(--text-2)' } : {}}>
+                    {t.type === 'income' ? '+' : t.type === 'expense' ? '−' : (t.dir === 'in' ? '+' : '−')}{fmtEur(t.montant)}
+                  </span>
+                  <span className="tx-edit-hint"><LucideIcons.ChevronRight size={16} /></span>
+                </button>
+              );
+            })}
           </div>
-        );
-      })}
+        </div>
+      ))}
 
-      {/* Voir plus */}
-      {hasMore && (
-        <button
-          className="btn ghost"
-          style={{ width: '100%', marginTop: 8, justifyContent: 'center', fontSize: 13 }}
-          onClick={() => setLimit(l => l + TX_PAGE)}
-        >
-          Voir plus · {remaining} de plus
-        </button>
+      {/* Voir plus / Voir moins */}
+      {(hasMore || limit > TX_PAGE) && (
+        <div className="tx-more-row">
+          {limit > TX_PAGE && (
+            <button
+              className="btn ghost sm"
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => setLimit(TX_PAGE)}
+            >
+              Voir moins
+            </button>
+          )}
+          {hasMore && (
+            <button
+              className="btn ghost sm"
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => setLimit(l => l + TX_PAGE)}
+            >
+              Voir plus · {remaining} de plus
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
