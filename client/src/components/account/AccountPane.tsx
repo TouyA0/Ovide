@@ -245,6 +245,13 @@ function TransactionList({ account, categories, onEdit, onDelete, onConfirmForec
     return months.sort((a, b) => b.localeCompare(a));
   }, [txs]);
 
+  // Catégories présentes dans le mois sélectionné (ou toutes les transactions si pas de filtre mois)
+  const catsInScope = useMemo(() => {
+    const scope = monthFilter !== 'all' ? txs.filter(t => t.date.startsWith(monthFilter)) : txs;
+    const ids = new Set(scope.map(t => t.categorieId).filter(Boolean));
+    return categories.filter(c => ids.has(c.id));
+  }, [categories, txs, monthFilter]);
+
   const hasActiveFilters = typeFilter !== 'all' || catFilter !== 'all' || monthFilter !== 'all' || q.trim() !== '';
   const resetFilters = () => { setTypeFilter('all'); setCatFilter('all'); setMonthFilter('all'); setQ(''); };
 
@@ -303,9 +310,9 @@ function TransactionList({ account, categories, onEdit, onDelete, onConfirmForec
           <button className={typeFilter === 'expense' ? 'on' : ''} onClick={() => setTypeFilter('expense')}>Dépenses</button>
           <button className={typeFilter === 'transfer' ? 'on' : ''} onClick={() => setTypeFilter('transfer')}>Virements</button>
         </div>
-        <select value={catFilter} onChange={e => setCatFilter(e.target.value)} className="filter-sel">
+        <select value={catsInScope.some(c => c.id === catFilter) ? catFilter : 'all'} onChange={e => setCatFilter(e.target.value)} className="filter-sel">
           <option value="all">Toutes catégories</option>
-          {categories.filter(c => txs.some(t => t.categorieId === c.id)).map(c =>
+          {catsInScope.map(c =>
             <option key={c.id} value={c.id}>{c.nom}</option>
           )}
         </select>
