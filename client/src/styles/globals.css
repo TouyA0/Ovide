@@ -357,11 +357,31 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .tx-group + .tx-group { margin-top: 2px; }
 .tx-stamp {
   flex: 0 0 auto; width: 32px; display: flex; flex-direction: column;
-  align-items: center; gap: 1px; line-height: 1;
+  align-items: center; gap: 1px; line-height: 1; position: relative;
 }
 .tx-stamp-d { font-size: 13.5px; font-weight: 700; color: var(--text-2); }
 .tx-stamp-m { font-size: 10px; font-weight: 600; color: var(--text-3); }
 .tx-stamp.blank { visibility: hidden; }
+
+/* Barre de groupement verticale sous la date */
+.tx-group .tx-row:first-child:not(:last-child)::after {
+  content: '';
+  position: absolute; left: 25px; top: calc(50% + 18px); bottom: 0;
+  width: 2px; border-radius: 1px 1px 0 0;
+  background: var(--line-strong);
+}
+.tx-group .tx-row:not(:first-child):not(:last-child)::before {
+  content: '';
+  position: absolute; left: 25px; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--line-strong);
+}
+.tx-group .tx-row:last-child:not(:first-child)::before {
+  content: '';
+  position: absolute; left: 25px; top: 0; bottom: 30%;
+  width: 2px; border-radius: 0 0 1px 1px;
+  background: var(--line-strong);
+}
 
 .tx-list { display: flex; flex-direction: column; }
 .tx-row {
