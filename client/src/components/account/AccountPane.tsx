@@ -17,6 +17,7 @@ interface Props {
   member: Member;
   categories: Category[];
   isSplitTarget?: boolean;
+  mobileSection?: 'transactions' | 'stats';
   onAdd: () => void;
   onTransfer: () => void;
   onExport: () => void;
@@ -25,16 +26,20 @@ interface Props {
   onTogglePrevisions: () => void;
 }
 
-export function AccountPane({ account, member, categories, isSplitTarget, onAdd, onTransfer, onExport, onEdit, onConfirmForecast, onTogglePrevisions }: Props) {
+export function AccountPane({ account, member, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onExport, onEdit, onConfirmForecast, onTogglePrevisions }: Props) {
   return (
-    <div className={`pane m-active${isSplitTarget ? ' is-split-target' : ''}`}>
+    <div className={`pane m-active${isSplitTarget ? ' is-split-target' : ''}`} data-section={mobileSection}>
       <div className="pane-inner">
         <BalanceHeader account={account} member={member} onAdd={onAdd} onTransfer={onTransfer} onExport={onExport} onTogglePrevisions={onTogglePrevisions} />
-        <StatsSection account={account} member={member} categories={categories} />
-        <TransactionList account={account} categories={categories} onEdit={onEdit} onConfirmForecast={onConfirmForecast} />
-        {account.type === 'courant' && (
-          <RecurrencesSection account={account} categories={categories} />
-        )}
+        <div className="m-section-stats">
+          <StatsSection account={account} member={member} categories={categories} />
+        </div>
+        <div className="m-section-tx">
+          <TransactionList account={account} categories={categories} onEdit={onEdit} onConfirmForecast={onConfirmForecast} />
+          {account.type === 'courant' && (
+            <RecurrencesSection account={account} categories={categories} />
+          )}
+        </div>
       </div>
     </div>
   );

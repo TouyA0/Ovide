@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Plus, MousePointer2, PenLine, Columns2, Download, Archive,
+  Sun, Moon, WalletMinimal, Tags, Receipt, BarChart2, Settings,
 } from 'lucide-react';
 import { Sidebar } from './components/layout/Sidebar';
 import { TabBar } from './components/layout/TabBar';
@@ -48,6 +49,7 @@ export default function App() {
   const [modal, setModal] = useState<ModalState>(null);
   const [ctx, setCtx] = useState<CtxState>(null);
   const [memberCtx, setMemberCtx] = useState<MemberCtxState>(null);
+  const [mobileSection, setMobileSection] = useState<'transactions' | 'stats'>('transactions');
 
   // Data
   const membersQ = useMembers();
@@ -232,8 +234,45 @@ export default function App() {
     ? accounts.find(a => a.id === modal.accId)
     : null;
 
+  // Réinitialise la section mobile quand on change de compte actif
+  const activeId = layout.activeId;
+
   return (
     <div className="app-shell">
+
+      {/* ── Chrome mobile (caché sur desktop via CSS container query) ── */}
+      <div className="m-topbar">
+        <div className="brand-mark" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0 }}>
+          <WalletMinimal size={14} />
+        </div>
+        <span className="m-title" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {activeAccount?.nom ?? 'Foyer'}
+        </span>
+        <button className="icon-btn" onClick={layout.toggleTheme} title="Thème clair/sombre">
+          {layout.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+        <button className="icon-btn" onClick={() => setModal({ kind: 'categories' })} title="Catégories">
+          <Tags size={18} />
+        </button>
+      </div>
+
+      <div className="m-switcher">
+        {accounts.filter(a => !a.archive).map(a => {
+          const m = members.find(mm => mm.id === a.memberId);
+          const isActive = a.id === activeId;
+          return (
+            <button
+              key={a.id}
+              className={`m-pill${isActive ? ' on' : ''}`}
+              onClick={() => { layout.openTab(a.id); setMobileSection('transactions'); }}
+            >
+              <i className="account-dot" style={{ background: isActive ? 'currentColor' : `var(--m-${m?.couleur ?? 'q'})` }} />
+              {a.nom}
+            </button>
+          );
+        })}
+      </div>
+
       <TabBar
         tabs={layout.tabs} accounts={accounts} members={members} activeId={layout.activeId}
         splitOn={layout.splitOn} theme={layout.theme}
@@ -259,6 +298,7 @@ export default function App() {
               <AccountPane
                 key={layout.activeId!}
                 {...activePaneProps}
+                mobileSection={mobileSection}
                 onAdd={() => setModal({ kind: 'add', accId: layout.activeId! })}
                 onTransfer={() => setModal({ kind: 'transfer', accId: layout.activeId! })}
                 onExport={() => handleExport(layout.activeId!)}
@@ -272,6 +312,7 @@ export default function App() {
                 key={'s' + layout.splitId}
                 {...splitPaneProps}
                 isSplitTarget
+                mobileSection={mobileSection}
                 onAdd={() => setModal({ kind: 'add', accId: layout.splitId! })}
                 onTransfer={() => setModal({ kind: 'transfer', accId: layout.splitId! })}
                 onExport={() => handleExport(layout.splitId!)}
@@ -387,6 +428,42 @@ export default function App() {
           />
         );
       })()}
+
+      {/* ── FAB mobile ── */}
+      {activeId && (
+        <button
+          className="fab"
+          onClick={() => setModal({ kind: 'add', accId: activeId })}
+          title="Ajouter une opération"
+        >
+          <Plus size={26} strokeWidth={2.2} />
+        </button>
+      )}
+
+      {/* ── Bottom bar mobile ── */}
+      <div className="m-bottombar">
+        <button
+          className={`m-tab${mobileSection === 'transactions' ? ' on' : ''}`}
+          onClick={() => setMobileSection('transactions')}
+        >
+          <Receipt size={20} />
+          Opérations
+        </button>
+        <button
+          className={`m-tab${mobileSection === 'stats' ? ' on' : ''}`}
+          onClick={() => setMobileSection('stats')}
+        >
+          <BarChart2 size={20} />
+          Stats
+        </button>
+        <button
+          className="m-tab"
+          onClick={() => setModal({ kind: 'categories' })}
+        >
+          <Settings size={20} />
+          Paramètres
+        </button>
+      </div>
 
       <Toasts items={toasts} />
     </div>
