@@ -15,7 +15,7 @@ import { AccountEditModal } from './components/modals/AccountEditModal';
 import { MemberFormModal } from './components/modals/MemberForm';
 import { CategoriesModal } from './components/modals/CategoriesModal';
 import { Modal } from './components/modals/Modal';
-import { Toasts, useToasts } from './components/ui/Toast';
+import { Toasts, useToastStore } from './components/ui/Toast';
 import { useLayout } from './store/useLayout';
 import {
   useMembers, useAccounts, useCategories,
@@ -45,7 +45,7 @@ export default function App() {
   const layout = useLayout();
   const initTabs = useLayout(s => s.initTabs);
   const tabsLength = useLayout(s => s.tabs.length);
-  const { items: toasts, push: pushToast } = useToasts();
+  const pushToast = useToastStore(s => s.push);
   const [modal, setModal] = useState<ModalState>(null);
   const [ctx, setCtx] = useState<CtxState>(null);
   const [memberCtx, setMemberCtx] = useState<MemberCtxState>(null);
@@ -465,7 +465,7 @@ export default function App() {
         </button>
       </div>
 
-      <Toasts items={toasts} />
+      <Toasts />
     </div>
   );
 }
