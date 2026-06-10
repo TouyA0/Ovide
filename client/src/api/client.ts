@@ -40,6 +40,8 @@ export const api = {
   // Categories
   getCategories: () => request<Category[]>('/categories'),
   createCategory: (data: Partial<Category>) => request<{ id: string }>('/categories', { method: 'POST', body: JSON.stringify(data) }),
+  updateCategory: (id: string, data: Partial<Category>) => request('/categories/' + id, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCategory: (id: string) => request('/categories/' + id, { method: 'DELETE' }),
 
   // Recurrences
   getRecurrences: (accountId?: string) => request<Recurrence[]>('/recurrences' + (accountId ? `?accountId=${accountId}` : '')),

@@ -12,6 +12,7 @@ import { EditTransactionModal } from './components/modals/EditTransaction';
 import { AccountFormModal } from './components/modals/AccountForm';
 import { AccountEditModal } from './components/modals/AccountEditModal';
 import { MemberFormModal } from './components/modals/MemberForm';
+import { CategoriesModal } from './components/modals/CategoriesModal';
 import { Modal } from './components/modals/Modal';
 import { Toasts, useToasts } from './components/ui/Toast';
 import { useLayout } from './store/useLayout';
@@ -20,6 +21,7 @@ import {
   useCreateTransaction, useUpdateTransaction, useDeleteTransaction,
   useCreateTransfer, useTogglePrevisions, useCreateAccount, useUpdateAccount,
   useArchiveAccount, useCreateMember, useUpdateMember,
+  useCreateCategory, useUpdateCategory, useDeleteCategory,
 } from './hooks/useData';
 import type { Transaction, ForecastItem, Member } from './api/client';
 
@@ -32,6 +34,7 @@ type ModalState =
   | { kind: 'archive-account'; accId: string }
   | { kind: 'member' }
   | { kind: 'edit-member'; member: Member }
+  | { kind: 'categories' }
   | null;
 
 type CtxState = { x: number; y: number; accId: string } | null;
@@ -78,6 +81,9 @@ export default function App() {
   const archiveAccount = useArchiveAccount();
   const createMember = useCreateMember();
   const updateMember = useUpdateMember();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
 
   const handleAddTx = async (data: Parameters<typeof createTx.mutateAsync>[0]) => {
     await createTx.mutateAsync(data);
@@ -148,6 +154,21 @@ export default function App() {
     await updateMember.mutateAsync({ id, data });
     pushToast('Membre mis à jour');
     setModal(null);
+  };
+
+  const handleCreateCategory = async (data: Parameters<typeof createCategory.mutateAsync>[0]) => {
+    await createCategory.mutateAsync(data);
+    pushToast('Catégorie créée');
+  };
+
+  const handleUpdateCategory = async (id: string, data: Parameters<typeof updateCategory.mutateAsync>[0]['data']) => {
+    await updateCategory.mutateAsync({ id, data });
+    pushToast('Catégorie mise à jour');
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    await deleteCategory.mutateAsync(id);
+    pushToast('Catégorie supprimée', 'trash-2');
   };
 
   const handleExport = (accId: string) => {
@@ -230,6 +251,7 @@ export default function App() {
           onMemberContext={(x, y, m) => setMemberCtx({ x, y, member: m })}
           onAddAccount={(memberId) => setModal({ kind: 'account', memberId })}
           onAddMember={() => setModal({ kind: 'member' })}
+          onOpenCategories={() => setModal({ kind: 'categories' })}
         />
         <div className="main">
           <div className="panes">
@@ -304,6 +326,15 @@ export default function App() {
             </button>
           </div>
         </Modal>
+      )}
+      {modal?.kind === 'categories' && (
+        <CategoriesModal
+          categories={categories}
+          onClose={() => setModal(null)}
+          onCreate={handleCreateCategory}
+          onUpdate={handleUpdateCategory}
+          onDelete={handleDeleteCategory}
+        />
       )}
       {modal?.kind === 'member' && (
         <MemberFormModal onClose={() => setModal(null)} onSave={handleCreateMember} />

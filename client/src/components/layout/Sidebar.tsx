@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { WalletMinimal, ChevronRight, UserPlus, ArchiveX } from 'lucide-react';
+import { WalletMinimal, ChevronRight, UserPlus, ArchiveX, Tags } from 'lucide-react';
 import { fmtEurShort } from '../../utils/format';
 import type { Member, Account } from '../../api/client';
 
@@ -12,9 +12,10 @@ interface Props {
   onMemberContext: (x: number, y: number, member: Member) => void;
   onAddAccount: (memberId: string) => void;
   onAddMember: () => void;
+  onOpenCategories: () => void;
 }
 
-export function Sidebar({ members, accounts, activeId, onOpen, onContext, onMemberContext, onAddAccount, onAddMember }: Props) {
+export function Sidebar({ members, accounts, activeId, onOpen, onContext, onMemberContext, onAddAccount, onAddMember, onOpenCategories }: Props) {
   const [open, setOpen] = useState<Record<string, boolean>>(
     () => Object.fromEntries(members.map(m => [m.id, true]))
   );
@@ -99,6 +100,7 @@ export function Sidebar({ members, accounts, activeId, onOpen, onContext, onMemb
       </div>
       <div className="side-foot">
         <button className="side-action" onClick={onAddMember}><UserPlus size={17} /> Ajouter un membre</button>
+        <button className="side-action" onClick={onOpenCategories}><Tags size={17} /> Catégories</button>
       </div>
     </aside>
   );
