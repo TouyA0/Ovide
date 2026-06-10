@@ -582,18 +582,13 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
                           : `Virement ${t.dir === 'in' ? 'reçu' : 'émis'}`;
                         return <><span>{label}</span>{t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}</>;
                       })()
-                        : <><i className="cat-dot" style={{ background: `oklch(0.6 0.12 ${hue})` }} /><span>{c?.nom ?? 'Divers'}</span>{t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}</>}
+                        : <><i className="cat-dot" style={{ background: `oklch(0.6 0.12 ${hue})` }} /><span>{c?.nom ?? 'Divers'}</span>{t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}{t.receiptPath && <><span className="tx-meta-sep">·</span><Paperclip size={11} style={{ flexShrink: 0, opacity: 0.6 }} /></>}</>}
                     </div>
                   </div>
                   <span className={`tx-amount ${t.type === 'income' ? 'inc' : isTr ? '' : 'exp'}`}
                     style={isTr ? { color: t.dir === 'in' ? 'var(--pos)' : 'var(--text-2)' } : {}}>
                     {t.type === 'income' ? '+' : t.type === 'expense' ? '−' : (t.dir === 'in' ? '+' : '−')}{fmtEur(t.montant)}
                   </span>
-                  {t.receiptPath && (
-                    <span className="tx-receipt-badge" title="Pièce jointe">
-                      <Paperclip size={12} />
-                    </span>
-                  )}
                   {t.recurrenceId && (
                     <button
                       className="tx-cancel-rec"

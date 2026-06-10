@@ -450,10 +450,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .receipt-file-link span { font-weight: 500; }
 .receipt-file-link:hover { background: var(--surface); color: var(--text); }
 .receipt-actions { display: flex; flex-direction: row; gap: 6px; margin-left: auto; flex-shrink: 0; }
-.tx-receipt-badge {
-  display: inline-flex; align-items: center; color: var(--text-3);
-  flex-shrink: 0; opacity: 0.7;
-}
 
 .tx-cancel-rec {
   flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; border: none;
