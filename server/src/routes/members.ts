@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db/client';
-import { members, accounts } from '../db/schema';
+import { members, accounts, transactions, recurrences, imports } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { computeBalance } from '../services/balance';
@@ -30,13 +30,21 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-  // Ne supprime que si aucun compte actif
   const accs = db.select().from(accounts).where(eq(accounts.memberId, req.params.id)).all();
   if (accs.some(a => !a.archive)) {
     res.status(409).json({ error: 'Archivez d\'abord tous les comptes du membre' });
     return;
   }
-  db.delete(members).where(eq(members.id, req.params.id)).run();
+  // Suppression en cascade dans une transaction SQLite
+  db.transaction(tx => {
+    for (const acc of accs) {
+      tx.delete(transactions).where(eq(transactions.accountId, acc.id)).run();
+      tx.delete(recurrences).where(eq(recurrences.accountId, acc.id)).run();
+      tx.delete(imports).where(eq(imports.accountId, acc.id)).run();
+    }
+    tx.delete(accounts).where(eq(accounts.memberId, req.params.id)).run();
+    tx.delete(members).where(eq(members.id, req.params.id)).run();
+  });
   res.json({ ok: true });
 });
 

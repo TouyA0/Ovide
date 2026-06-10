@@ -22,7 +22,7 @@ import {
   useMembers, useAccounts, useCategories,
   useCreateTransaction, useUpdateTransaction, useDeleteTransaction,
   useCreateTransfer, useTogglePrevisions, useCreateAccount, useUpdateAccount, useCreateImport,
-  useArchiveAccount, useCreateMember, useUpdateMember,
+  useArchiveAccount, useCreateMember, useUpdateMember, useDeleteMember,
   useCreateCategory, useUpdateCategory, useDeleteCategory,
 } from './hooks/useData';
 import type { Transaction, ForecastItem, Member } from './api/client';
@@ -86,6 +86,7 @@ export default function App() {
   const archiveAccount = useArchiveAccount();
   const createMember = useCreateMember();
   const updateMember = useUpdateMember();
+  const deleteMember = useDeleteMember();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
@@ -168,6 +169,12 @@ export default function App() {
   const handleEditMember = async (id: string, data: Parameters<typeof updateMember.mutateAsync>[0]['data']) => {
     await updateMember.mutateAsync({ id, data });
     pushToast('Membre mis à jour');
+    setModal(null);
+  };
+
+  const handleDeleteMember = async (id: string) => {
+    await deleteMember.mutateAsync(id);
+    pushToast('Membre supprimé', 'trash-2');
     setModal(null);
   };
 
@@ -416,9 +423,10 @@ export default function App() {
       {modal?.kind === 'edit-member' && (
         <MemberFormModal
           member={modal.member}
-          isPending={updateMember.isPending}
+          isPending={updateMember.isPending || deleteMember.isPending}
           onClose={() => setModal(null)}
           onSave={data => handleEditMember(modal.member.id, data)}
+          onDelete={() => handleDeleteMember(modal.member.id)}
         />
       )}
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { Modal } from './Modal';
 import type { Member } from '../../api/client';
 
@@ -8,6 +8,7 @@ interface Props {
   isPending?: boolean;
   onClose: () => void;
   onSave: (data: { nom: string; couleur: string; initiales: string }) => void;
+  onDelete?: () => void;
 }
 
 const PRESET_COLORS = [
@@ -21,10 +22,11 @@ const PRESET_COLORS = [
   { label: 'Cyan',     value: 'h' },
 ];
 
-export function MemberFormModal({ member, isPending, onClose, onSave }: Props) {
+export function MemberFormModal({ member, isPending, onClose, onSave, onDelete }: Props) {
   const isEdit = !!member;
   const [nom, setNom] = useState(member?.nom ?? '');
   const [couleur, setCouleur] = useState(member?.couleur ?? 'q');
+  const [confirmDel, setConfirmDel] = useState(false);
 
   // Recalcule les initiales depuis le nom saisi (2 premières lettres maj)
   const initiales = nom.trim().slice(0, 2).toUpperCase() || (isEdit ? member!.initiales : '?');
@@ -69,12 +71,27 @@ export function MemberFormModal({ member, isPending, onClose, onSave }: Props) {
           ))}
         </div>
       </div>
-      <div className="modal-foot">
-        <button className="btn ghost" onClick={onClose} disabled={!!isPending}>Annuler</button>
-        <button className="btn primary" disabled={!valid || !!isPending}
-          onClick={() => onSave({ nom: nom.trim(), couleur, initiales })}>
-          {isPending ? <Loader2 size={15} className="spin" /> : (isEdit ? 'Enregistrer' : 'Ajouter')}
-        </button>
+      <div className="modal-foot" style={{ flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, width: '100%' }}>
+          <button className="btn ghost" onClick={onClose} disabled={!!isPending}>Annuler</button>
+          <button className="btn primary" style={{ flex: 1 }} disabled={!valid || !!isPending}
+            onClick={() => onSave({ nom: nom.trim(), couleur, initiales })}>
+            {isPending ? <Loader2 size={15} className="spin" /> : (isEdit ? 'Enregistrer' : 'Ajouter')}
+          </button>
+        </div>
+        {isEdit && onDelete && (
+          confirmDel ? (
+            <button className="btn danger" style={{ width: '100%', background: 'var(--neg)', color: '#fff', borderColor: 'transparent' }}
+              disabled={!!isPending} onClick={onDelete}>
+              {isPending ? <Loader2 size={15} className="spin" /> : <><Trash2 size={15} /> Confirmer la suppression</>}
+            </button>
+          ) : (
+            <button className="btn danger" style={{ width: '100%' }} disabled={!!isPending}
+              onClick={() => setConfirmDel(true)}>
+              <Trash2 size={15} /> Supprimer le membre
+            </button>
+          )
+        )}
       </div>
     </Modal>
   );

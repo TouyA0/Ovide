@@ -212,6 +212,19 @@ export function useUpdateMember() {
   });
 }
 
+export function useDeleteMember() {
+  const qc = useQueryClient();
+  const onError = useOnError();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteMember(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['members'] });
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+    },
+    onError,
+  });
+}
+
 export function useCreateCategory() {
   const qc = useQueryClient();
   const onError = useOnError();
