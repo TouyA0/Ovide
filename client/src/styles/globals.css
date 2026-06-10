@@ -328,6 +328,18 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .tx-search input { border: none; background: none; outline: none; flex: 1; color: var(--text); }
 .tx-search input::placeholder { color: var(--text-3); }
 
+.tx-filters {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.filter-sel {
+  appearance: none; -webkit-appearance: none;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--text-2);
+  cursor: pointer; outline: none; font-family: inherit;
+}
+.filter-sel:hover { border-color: var(--line-strong); color: var(--text); }
+.filter-sel:focus { border-color: var(--accent); color: var(--text); }
+
 .tx-day-label {
   font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em;
   padding: 16px 4px 6px; display: flex; align-items: center; justify-content: space-between;

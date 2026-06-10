@@ -9,7 +9,7 @@ import {
   useTransactions, useBalanceSeries, useBars, useComparison, useDonut, useForecast,
   useRecurrences, useCreateRecurrence, useUpdateRecurrence, useDeleteRecurrence,
 } from '../../hooks/useData';
-import { fmtEur, fmtEurShort, fmtDateLong, fmtChange, pctDelta, relDay, MONTHS_FULL } from '../../utils/format';
+import { fmtEur, fmtEurShort, fmtDateLong, fmtChange, pctDelta, relDay, MONTHS_FULL, MONTHS } from '../../utils/format';
 import type { Account, Member, Category, Transaction, ForecastItem, Recurrence } from '../../api/client';
 
 interface Props {
@@ -195,12 +195,19 @@ function StatsSection({ account, member, categories }: { account: Account; membe
 }
 
 /* ---- Transaction list ---- */
+const TX_PAGE = 20;
+
 function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
   account: Account; categories: Category[];
   onEdit: (tx: Transaction) => void;
   onConfirmForecast: (f: ForecastItem) => void;
 }) {
   const [q, setQ] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense' | 'transfer'>('all');
+  const [catFilter, setCatFilter] = useState('all');
+  const [monthFilter, setMonthFilter] = useState('all');
+  const [limit, setLimit] = useState(TX_PAGE);
+
   const txQuery = useTransactions(account.id);
   const forecastQuery = useForecast(account.id);
   const catMap = useMemo(() => Object.fromEntries(categories.map(c => [c.id, c])), [categories]);
@@ -208,20 +215,45 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
   const txs = txQuery.data ?? [];
   const forecast = forecastQuery.data ?? [];
 
+  const availableMonths = useMemo(() => {
+    const months = [...new Set(txs.map(t => t.date.slice(0, 7)))];
+    return months.sort((a, b) => b.localeCompare(a));
+  }, [txs]);
+
+  const hasActiveFilters = typeFilter !== 'all' || catFilter !== 'all' || monthFilter !== 'all' || q.trim() !== '';
+  const resetFilters = () => { setTypeFilter('all'); setCatFilter('all'); setMonthFilter('all'); setQ(''); };
+
   const filtered = useMemo(() => {
+    let result = txs;
     const s = q.trim().toLowerCase();
-    if (!s) return txs;
-    return txs.filter(t => {
+    if (s) result = result.filter(t => {
       const c = t.categorieId ? catMap[t.categorieId] : null;
       return (t.libelle ?? '').toLowerCase().includes(s) || (c && c.nom.toLowerCase().includes(s));
     });
-  }, [txs, q, catMap]);
+    if (typeFilter !== 'all') result = result.filter(t => t.type === typeFilter);
+    if (catFilter !== 'all') result = result.filter(t => t.categorieId === catFilter);
+    if (monthFilter !== 'all') result = result.filter(t => t.date.startsWith(monthFilter));
+    return result;
+  }, [txs, q, typeFilter, catFilter, monthFilter, catMap]);
+
+  const displayed = useMemo(() => filtered.slice(0, limit), [filtered, limit]);
+  const hasMore = filtered.length > limit;
+  const remaining = filtered.length - limit;
 
   const groups = useMemo(() => {
     const g: Record<string, Transaction[]> = {};
-    filtered.forEach(t => { (g[t.date] = g[t.date] || []).push(t); });
+    displayed.forEach(t => { (g[t.date] = g[t.date] || []).push(t); });
     return Object.keys(g).sort((a, b) => b.localeCompare(a)).map(date => ({ date, items: g[date] }));
-  }, [filtered]);
+  }, [displayed]);
+
+  // Forecasts filtered to match active type / category filters, hidden when browsing a past month
+  const visibleForecast = useMemo(() => {
+    if (monthFilter !== 'all' || typeFilter === 'transfer') return [];
+    let result = forecast;
+    if (typeFilter !== 'all') result = result.filter(f => f.sens === typeFilter);
+    if (catFilter !== 'all') result = result.filter(f => f.categorieId === catFilter);
+    return result;
+  }, [forecast, typeFilter, catFilter, monthFilter]);
 
   function signed(t: Transaction) {
     if (t.type === 'income') return t.montant;
@@ -231,9 +263,10 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
 
   return (
     <div className="tx-section">
+      {/* Toolbar */}
       <div className="tx-toolbar">
         <h2>Transactions</h2>
-        <span className="count">{txs.length}</span>
+        <span className="count">{hasActiveFilters ? `${filtered.length} / ${txs.length}` : txs.length}</span>
         <div className="tx-search">
           <Search size={15} />
           <input placeholder="Rechercher…" value={q} onChange={e => setQ(e.target.value)} />
@@ -241,11 +274,40 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
         </div>
       </div>
 
-      {forecast.length > 0 && !q && (
+      {/* Filters */}
+      <div className="tx-filters">
+        <div className="seg">
+          <button className={typeFilter === 'all' ? 'on' : ''} onClick={() => setTypeFilter('all')}>Tout</button>
+          <button className={typeFilter === 'income' ? 'on' : ''} onClick={() => setTypeFilter('income')}>Entrées</button>
+          <button className={typeFilter === 'expense' ? 'on' : ''} onClick={() => setTypeFilter('expense')}>Dépenses</button>
+          <button className={typeFilter === 'transfer' ? 'on' : ''} onClick={() => setTypeFilter('transfer')}>Virements</button>
+        </div>
+        <select value={catFilter} onChange={e => setCatFilter(e.target.value)} className="filter-sel">
+          <option value="all">Toutes catégories</option>
+          {categories.filter(c => txs.some(t => t.categorieId === c.id)).map(c =>
+            <option key={c.id} value={c.id}>{c.nom}</option>
+          )}
+        </select>
+        <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)} className="filter-sel">
+          <option value="all">Tous les mois</option>
+          {availableMonths.map(m => {
+            const [y, mo] = m.split('-').map(Number);
+            return <option key={m} value={m}>{MONTHS[mo - 1]} {y}</option>;
+          })}
+        </select>
+        {hasActiveFilters && (
+          <button className="btn ghost sm" onClick={resetFilters} style={{ marginLeft: 'auto', flexShrink: 0 }}>
+            <X size={13} /> Réinitialiser
+          </button>
+        )}
+      </div>
+
+      {/* Upcoming forecasts */}
+      {visibleForecast.length > 0 && (
         <div style={{ marginBottom: 6 }}>
           <div className="tx-day-label"><span>À venir ce mois-ci · projeté</span></div>
           <div className="tx-list">
-            {forecast.map(f => {
+            {visibleForecast.map(f => {
               const c = f.categorieId ? catMap[f.categorieId] : null;
               const IconComp = c ? (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
                 c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
@@ -270,13 +332,15 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
         </div>
       )}
 
+      {/* Empty state */}
       {groups.length === 0 && (
         <div className="empty">
           <div className="e-ic"><span style={{ fontSize: 22 }}>🧾</span></div>
-          {q ? 'Aucun résultat.' : 'Aucune transaction pour le moment.'}
+          {hasActiveFilters ? 'Aucun résultat pour ces filtres.' : 'Aucune transaction pour le moment.'}
         </div>
       )}
 
+      {/* Transaction groups */}
       {groups.map(grp => {
         const daySum = grp.items.reduce((s, t) => s + (t.type === 'transfer' ? 0 : signed(t)), 0);
         return (
@@ -317,6 +381,17 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
           </div>
         );
       })}
+
+      {/* Voir plus */}
+      {hasMore && (
+        <button
+          className="btn ghost"
+          style={{ width: '100%', marginTop: 8, justifyContent: 'center', fontSize: 13 }}
+          onClick={() => setLimit(l => l + TX_PAGE)}
+        >
+          Voir plus · {remaining} de plus
+        </button>
+      )}
     </div>
   );
 }
