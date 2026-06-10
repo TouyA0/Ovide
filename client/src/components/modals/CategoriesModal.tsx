@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Check, X, ArrowLeft } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, ArrowLeft, Search } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import type { ComponentType } from 'react';
 import { Modal } from './Modal';
@@ -15,12 +15,79 @@ interface Props {
 
 type ViewMode = 'list' | 'edit';
 
-const ICON_SUGGESTIONS = [
-  'shopping-cart', 'utensils', 'car', 'house', 'zap', 'heart-pulse',
-  'shirt', 'plane', 'graduation-cap', 'gamepad-2', 'music', 'dumbbell',
-  'coffee', 'gift', 'wrench', 'baby', 'dog', 'leaf',
-  'briefcase', 'wallet', 'piggy-bank', 'receipt', 'trending-up', 'handshake',
+// ── Icon catalogue ────────────────────────────────────────────────
+const ICON_GROUPS: { label: string; icons: string[] }[] = [
+  {
+    label: 'Alimentation',
+    icons: [
+      'utensils', 'coffee', 'wine', 'pizza', 'apple', 'fish', 'beef',
+      'carrot', 'cake', 'beer', 'croissant', 'salad', 'soup', 'sandwich',
+      'cookie', 'grape', 'banana', 'egg', 'milk', 'flame',
+    ],
+  },
+  {
+    label: 'Transport',
+    icons: [
+      'car', 'bus', 'train-front', 'plane', 'bike', 'fuel', 'map-pin',
+      'navigation', 'truck', 'ship', 'cable-car', 'tram-front',
+    ],
+  },
+  {
+    label: 'Maison',
+    icons: [
+      'house', 'sofa', 'lamp-desk', 'bed-double', 'bath', 'tv',
+      'wifi', 'phone', 'wrench', 'hammer', 'paintbrush', 'scissors',
+      'plug', 'key', 'thermometer', 'shower-head', 'trash-2', 'door-open',
+    ],
+  },
+  {
+    label: 'Shopping',
+    icons: [
+      'shopping-cart', 'shopping-bag', 'package', 'gift', 'tag',
+      'credit-card', 'store', 'receipt', 'shirt', 'glasses', 'watch',
+    ],
+  },
+  {
+    label: 'Santé & sport',
+    icons: [
+      'heart-pulse', 'pill', 'stethoscope', 'activity', 'dumbbell',
+      'baby', 'syringe', 'shield-plus', 'heart', 'bandage', 'apple',
+    ],
+  },
+  {
+    label: 'Loisirs',
+    icons: [
+      'gamepad-2', 'music', 'film', 'camera', 'book-open', 'graduation-cap',
+      'palette', 'party-popper', 'ticket', 'headphones', 'mic', 'dice-5',
+      'mountain', 'waves', 'umbrella', 'tent', 'telescope', 'joystick',
+    ],
+  },
+  {
+    label: 'Finances',
+    icons: [
+      'wallet', 'piggy-bank', 'trending-up', 'trending-down', 'banknote',
+      'coins', 'landmark', 'hand-coins', 'circle-dollar-sign', 'percent',
+      'bar-chart-2', 'receipt',
+    ],
+  },
+  {
+    label: 'Travail',
+    icons: [
+      'briefcase', 'laptop', 'monitor', 'printer', 'file-text', 'pen-line',
+      'building-2', 'hard-hat', 'users', 'handshake', 'clipboard', 'inbox',
+    ],
+  },
+  {
+    label: 'Nature & divers',
+    icons: [
+      'leaf', 'sun', 'moon', 'cloud', 'tree-pine', 'flower-2',
+      'dog', 'cat', 'paw-print', 'zap', 'snowflake', 'droplets',
+      'sparkles', 'star', 'globe', 'map',
+    ],
+  },
 ];
+
+const ALL_ICONS = ICON_GROUPS.flatMap(g => g.icons);
 
 function iconNameToComponent(name: string): ComponentType<{ size?: number }> | null {
   const pascal = name.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('');
@@ -42,11 +109,112 @@ function CategoryIcon({ name, hue, size = 22 }: { name: string; hue: number; siz
   );
 }
 
+// ── Icon picker sub-component ─────────────────────────────────────
+function IconPicker({ value, hue, onChange }: { value: string; hue: number; onChange: (v: string) => void }) {
+  const [search, setSearch] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const query = search.trim().toLowerCase();
+
+  const filtered = query
+    ? ALL_ICONS.filter(n => n.includes(query))
+    : null;
+
+  const btnStyle = (name: string): React.CSSProperties => ({
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    width: 34, height: 34, borderRadius: 8, border: 'none', cursor: 'pointer',
+    flexShrink: 0,
+    background: value === name ? `oklch(0.6 0.12 ${hue} / 0.2)` : 'var(--surface-2)',
+    color: value === name ? `oklch(0.5 0.13 ${hue})` : 'var(--text-2)',
+    outline: value === name ? `2px solid oklch(0.6 0.12 ${hue})` : 'none',
+    outlineOffset: -2,
+    transition: 'background 0.1s',
+  });
+
+  return (
+    <div>
+      {/* Search bar */}
+      <div style={{ position: 'relative', marginBottom: 8 }}>
+        <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)', pointerEvents: 'none' }} />
+        <input
+          ref={searchRef}
+          className="input"
+          style={{ width: '100%', paddingLeft: 30, boxSizing: 'border-box' }}
+          placeholder="Rechercher une icône…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {search && (
+          <button
+            onClick={() => { setSearch(''); searchRef.current?.focus(); }}
+            style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', display: 'flex', padding: 2 }}
+          >
+            <X size={13} />
+          </button>
+        )}
+      </div>
+
+      {/* Grid */}
+      <div style={{
+        height: 188, overflowY: 'auto', overflowX: 'hidden',
+        border: '1px solid var(--line)', borderRadius: 10,
+        padding: '8px 10px',
+      }}>
+        {filtered ? (
+          // Flat search results
+          filtered.length === 0 ? (
+            <div style={{ color: 'var(--text-3)', fontSize: 13, padding: '8px 4px' }}>Aucun résultat</div>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {filtered.map(name => {
+                const Ic = iconNameToComponent(name);
+                if (!Ic) return null;
+                return (
+                  <button key={name} title={name} onClick={() => onChange(name)} style={btnStyle(name)}>
+                    <Ic size={16} />
+                  </button>
+                );
+              })}
+            </div>
+          )
+        ) : (
+          // Grouped view
+          ICON_GROUPS.map(group => (
+            <div key={group.label} style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>
+                {group.label}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {group.icons.map(name => {
+                  const Ic = iconNameToComponent(name);
+                  if (!Ic) return null;
+                  return (
+                    <button key={name} title={name} onClick={() => onChange(name)} style={btnStyle(name)}>
+                      <Ic size={16} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Current icon name hint */}
+      <div style={{ marginTop: 5, fontSize: 12, color: 'var(--text-3)' }}>
+        {value
+          ? <>Sélectionné : <code style={{ fontFamily: 'monospace' }}>{value}</code></>
+          : 'Aucune icône sélectionnée'}
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────
 export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDelete }: Props) {
   const [view, setView] = useState<ViewMode>('list');
-  const [editing, setEditing] = useState<Category | null>(null); // null = new
+  const [editing, setEditing] = useState<Category | null>(null);
 
-  // Form state
   const [nom, setNom] = useState('');
   const [icone, setIcone] = useState('tag');
   const [hue, setHue] = useState(220);
@@ -55,20 +223,12 @@ export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDel
   const nomRef = useRef<HTMLInputElement>(null);
 
   const openNew = () => {
-    setEditing(null);
-    setNom('');
-    setIcone('tag');
-    setHue(220);
-    setConfirmDel(false);
+    setEditing(null); setNom(''); setIcone('tag'); setHue(220); setConfirmDel(false);
     setView('edit');
   };
 
   const openEdit = (cat: Category) => {
-    setEditing(cat);
-    setNom(cat.nom);
-    setIcone(cat.icone);
-    setHue(cat.hue);
-    setConfirmDel(false);
+    setEditing(cat); setNom(cat.nom); setIcone(cat.icone); setHue(cat.hue); setConfirmDel(false);
     setView('edit');
   };
 
@@ -78,7 +238,8 @@ export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDel
     if (view === 'edit') setTimeout(() => nomRef.current?.select(), 30);
   }, [view]);
 
-  const valid = nom.trim().length > 0 && iconNameToComponent(icone) !== null;
+  const IconComp = iconNameToComponent(icone);
+  const valid = nom.trim().length > 0 && IconComp !== null;
 
   const handleSave = () => {
     if (!valid) return;
@@ -94,7 +255,7 @@ export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDel
     backToList();
   };
 
-  // ── List view ───────────────────────────────────────────────────
+  // ── List view ─────────────────────────────────────────────────────
   if (view === 'list') {
     return (
       <Modal title="Catégories" onClose={onClose}>
@@ -108,8 +269,7 @@ export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDel
               {categories.map(cat => (
                 <li key={cat.id} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '9px 20px', cursor: 'default',
-                  transition: 'background 0.1s',
+                  padding: '9px 20px',
                 }}>
                   <CategoryIcon name={cat.icone} hue={cat.hue} />
                   <span style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{cat.nom}</span>
@@ -135,19 +295,21 @@ export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDel
     );
   }
 
-  // ── Edit / Create view ──────────────────────────────────────────
-  const IconComp = iconNameToComponent(icone);
-
+  // ── Edit / Create view ────────────────────────────────────────────
   return (
     <Modal title={editing ? 'Modifier la catégorie' : 'Nouvelle catégorie'} onClose={onClose}>
       <div className="modal-body">
 
         {/* Preview */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-          <CategoryIcon name={icone} hue={hue} size={26} />
-          <span style={{ fontSize: 16, fontWeight: 600, color: nom.trim() ? 'var(--text-1)' : 'var(--text-3)' }}>
-            {nom.trim() || 'Nouvelle catégorie'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18,
+          padding: '10px 14px', background: 'var(--surface-2)', borderRadius: 10 }}>
+          <CategoryIcon name={icone} hue={hue} size={24} />
+          <span style={{ fontSize: 15, fontWeight: 600, color: nom.trim() ? 'var(--text-1)' : 'var(--text-3)' }}>
+            {nom.trim() || 'Aperçu'}
           </span>
+          {!IconComp && icone.length > 0 && (
+            <span style={{ marginLeft: 'auto', color: 'var(--neg)', fontSize: 12 }}>Icône introuvable</span>
+          )}
         </div>
 
         {/* Nom */}
@@ -158,61 +320,12 @@ export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDel
           placeholder="Ex. Alimentation, Transport…"
           value={nom}
           onChange={e => setNom(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
+          onKeyDown={e => { if (e.key === 'Enter' && valid) handleSave(); }}
         />
 
-        {/* Icône */}
-        <div className="field-label" style={{ marginTop: 14 }}>
-          Icône
-          {!IconComp && icone.length > 0 && (
-            <span style={{ color: 'var(--neg)', marginLeft: 8, fontSize: 12, fontWeight: 400 }}>
-              Nom introuvable
-            </span>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <input
-            className="input"
-            style={{ flex: 1 }}
-            placeholder="kebab-case, ex: shopping-cart"
-            value={icone}
-            onChange={e => setIcone(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-          />
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-            background: `oklch(0.6 0.12 ${hue} / 0.15)`,
-            color: `oklch(0.5 0.13 ${hue})`,
-            border: '1px solid var(--line)',
-          }}>
-            {IconComp ? <IconComp size={18} /> : <X size={16} style={{ color: 'var(--text-3)' }} />}
-          </span>
-        </div>
-
-        {/* Suggestions rapides */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
-          {ICON_SUGGESTIONS.map(name => {
-            const Ic = iconNameToComponent(name);
-            if (!Ic) return null;
-            return (
-              <button
-                key={name}
-                title={name}
-                onClick={() => setIcone(name)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: 32, height: 32, borderRadius: 7, border: 'none', cursor: 'pointer',
-                  background: icone === name ? `oklch(0.6 0.12 ${hue} / 0.2)` : 'var(--surface-2)',
-                  color: icone === name ? `oklch(0.5 0.13 ${hue})` : 'var(--text-2)',
-                  outline: icone === name ? `2px solid oklch(0.6 0.12 ${hue})` : 'none',
-                  transition: 'background 0.1s',
-                }}
-              >
-                <Ic size={15} />
-              </button>
-            );
-          })}
-        </div>
+        {/* Icône picker */}
+        <div className="field-label" style={{ marginTop: 14 }}>Icône</div>
+        <IconPicker value={icone} hue={hue} onChange={setIcone} />
 
         {/* Couleur */}
         <div className="field-label" style={{ marginTop: 14 }}>Couleur</div>
@@ -224,8 +337,7 @@ export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDel
           />
           <span style={{
             width: 28, height: 28, borderRadius: 6, flexShrink: 0,
-            background: `oklch(0.6 0.15 ${hue})`,
-            display: 'inline-block',
+            background: `oklch(0.6 0.15 ${hue})`, display: 'inline-block',
           }} />
         </div>
       </div>
