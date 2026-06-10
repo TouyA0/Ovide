@@ -17,24 +17,13 @@ export function TransferModal({ accounts, members, defaultFromId, isPending, onC
   const fromId = defaultFromId || accounts[0]?.id;
   const otherAccounts = accounts.filter(a => a.id !== fromId);
   const [toId, setToId] = useState(otherAccounts[0]?.id ?? '');
-  const [open, setOpen] = useState(false);
+  const [picking, setPicking] = useState(false);
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today());
   const [libelle, setLibelle] = useState('');
   const amountRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { const t = setTimeout(() => amountRef.current?.focus(), 80); return () => clearTimeout(t); }, []);
-
-  // Ferme le dropdown si clic en dehors
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (!dropdownRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
 
   const nameOf = (id: string) => {
     const a = accounts.find(x => x.id === id);
@@ -72,36 +61,36 @@ export function TransferModal({ accounts, members, defaultFromId, isPending, onC
 
           <ArrowRight size={22} style={{ color: 'var(--accent)', flexShrink: 0 }} />
 
-          {/* VERS — dropdown custom */}
-          <div className="tv-acct tv-acct-select" ref={dropdownRef}>
-            <button className="tv-acct-btn" onClick={() => setOpen(o => !o)}>
-              <div className="tv-lbl">Vers <ChevronDown size={11} style={{ marginLeft: 3, opacity: 0.6 }} /></div>
-              <div className="tv-name">
-                <i className="account-dot" style={{ background: `var(--m-${to.m?.couleur})` }} />
-                {to.a?.nom ?? '—'}
-              </div>
-              <div className="muted" style={{ fontSize: 12 }}>{to.m?.nom}</div>
-            </button>
-            {open && (
-              <div className="tv-dropdown">
-                {otherAccounts.map(a => {
-                  const m = members.find(mm => mm.id === a.memberId);
-                  return (
-                    <button
-                      key={a.id}
-                      className={`tv-option${a.id === toId ? ' on' : ''}`}
-                      onClick={() => { setToId(a.id); setOpen(false); }}
-                    >
-                      <i className="account-dot" style={{ background: `var(--m-${m?.couleur})`, width: 8, height: 8, flexShrink: 0 }} />
-                      <span className="tv-option-name">{a.nom}</span>
-                      <span className="tv-option-member">{m?.nom}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {/* VERS — cliquable */}
+          <button className={`tv-acct tv-acct-select${picking ? ' is-open' : ''}`} onClick={() => setPicking(p => !p)}>
+            <div className="tv-lbl">Vers <ChevronDown size={11} style={{ marginLeft: 3, opacity: 0.6, transition: 'transform .15s', transform: picking ? 'rotate(180deg)' : 'none' }} /></div>
+            <div className="tv-name">
+              <i className="account-dot" style={{ background: `var(--m-${to.m?.couleur})` }} />
+              {to.a?.nom ?? '—'}
+            </div>
+            <div className="muted" style={{ fontSize: 12 }}>{to.m?.nom}</div>
+          </button>
         </div>
+
+        {/* Picker inline */}
+        {picking && (
+          <div className="tv-picker">
+            {otherAccounts.map(a => {
+              const m = members.find(mm => mm.id === a.memberId);
+              return (
+                <button
+                  key={a.id}
+                  className={`tv-option${a.id === toId ? ' on' : ''}`}
+                  onClick={() => { setToId(a.id); setPicking(false); }}
+                >
+                  <i className="account-dot" style={{ background: `var(--m-${m?.couleur})`, width: 8, height: 8, flexShrink: 0 }} />
+                  <span className="tv-option-name">{a.nom}</span>
+                  <span className="tv-option-member">{m?.nom}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="row2" style={{ marginTop: 12 }}>
           <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} aria-label="Date" />
