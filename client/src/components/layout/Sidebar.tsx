@@ -54,7 +54,7 @@ export function Sidebar({ members, accounts, activeId, onOpen, onOpenDashboard, 
               {open[m.id] && (
                 <div className="account-list">
                   {accs.map(a => (
-                    <button key={a.id} className={`account-item${a.id === activeId ? ' active' : ''}`}
+                    <button key={a.id} className={`account-item${a.id === activeId ? ' active' : ''}${a.balance < 0 ? ' neg' : ''}`}
                       onClick={() => onOpen(a.id)}
                       onContextMenu={e => { e.preventDefault(); onContext(e.clientX, e.clientY, a.id); }}>
                       <i className="account-dot" style={{ background: a.type === 'epargne' ? 'oklch(0.6 0.02 70)' : `var(--m-${m.couleur})` }} />

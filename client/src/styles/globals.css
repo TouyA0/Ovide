@@ -213,6 +213,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .account-item:hover .acc-label-sub  { opacity: 1; transform: translateY(0); }
 .account-bal { font-size: 12.5px; font-weight: 600; color: var(--text-3); }
 .account-item.active .account-bal { color: var(--text-2); }
+.account-item.neg { background: oklch(0.6 0.12 25 / 0.08); }
+.account-item.neg .acc-label-main,
+.account-item.neg .account-bal { color: var(--neg); }
+.account-item.neg .account-dot { background: var(--neg) !important; }
 
 .side-foot { border-top: 1px solid var(--line); padding: 10px; display: flex; flex-direction: column; gap: 4px; }
 
