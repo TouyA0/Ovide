@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { Modal } from './Modal';
 import { today } from '../../utils/format';
 import type { Account, Member } from '../../api/client';
@@ -8,11 +8,12 @@ interface Props {
   accounts: Account[];
   members: Member[];
   defaultFromId: string;
+  isPending?: boolean;
   onClose: () => void;
   onSave: (data: { fromId: string; toId: string; montant: number; date: string; libelle: string }) => void;
 }
 
-export function TransferModal({ accounts, members, defaultFromId, onClose, onSave }: Props) {
+export function TransferModal({ accounts, members, defaultFromId, isPending, onClose, onSave }: Props) {
   const [fromId, setFromId] = useState(defaultFromId || accounts[0]?.id);
   const [toId, setToId] = useState(accounts.find(a => a.id !== (defaultFromId || accounts[0]?.id))?.id ?? '');
   const [amount, setAmount] = useState('');
@@ -84,10 +85,10 @@ export function TransferModal({ accounts, members, defaultFromId, onClose, onSav
         </div>
       </div>
       <div className="modal-foot">
-        <button className="btn ghost" onClick={onClose}>Annuler</button>
-        <button className="btn primary" disabled={!valid}
+        <button className="btn ghost" onClick={onClose} disabled={!!isPending}>Annuler</button>
+        <button className="btn primary" disabled={!valid || !!isPending}
           onClick={() => valid && onSave({ fromId, toId, montant: Math.abs(parsed), date, libelle: libelle.trim() || 'Virement' })}>
-          Transférer {valid ? parsed.toFixed(2).replace('.', ',') + ' €' : ''}
+          {isPending ? <Loader2 size={15} className="spin" /> : <>Transférer {valid ? parsed.toFixed(2).replace('.', ',') + ' €' : ''}</>}
         </button>
       </div>
     </Modal>

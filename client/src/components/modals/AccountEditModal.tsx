@@ -1,14 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Modal } from './Modal';
 import type { Account } from '../../api/client';
 
 interface Props {
   account: Account;
+  isPending?: boolean;
   onClose: () => void;
   onSave: (data: { nom: string; type: 'courant' | 'epargne' | 'autre'; banque: string | null }) => void;
 }
 
-export function AccountEditModal({ account, onClose, onSave }: Props) {
+export function AccountEditModal({ account, isPending, onClose, onSave }: Props) {
   const [nom, setNom] = useState(account.nom);
   const [type, setType] = useState<'courant' | 'epargne' | 'autre'>(account.type);
   const [banque, setBanque] = useState(account.banque ?? '');
@@ -34,7 +36,7 @@ export function AccountEditModal({ account, onClose, onSave }: Props) {
           className="input field"
           value={nom}
           onChange={e => setNom(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && valid) onSave({ nom: nom.trim(), type, banque: banque.trim() || null }); }}
+          onKeyDown={e => { if (e.key === 'Enter' && valid && !isPending) onSave({ nom: nom.trim(), type, banque: banque.trim() || null }); }}
         />
         <div className="field-label" style={{ marginTop: 12 }}>Type</div>
         <select
@@ -57,10 +59,10 @@ export function AccountEditModal({ account, onClose, onSave }: Props) {
         />
       </div>
       <div className="modal-foot">
-        <button className="btn ghost" onClick={onClose}>Annuler</button>
-        <button className="btn primary" disabled={!valid}
+        <button className="btn ghost" onClick={onClose} disabled={!!isPending}>Annuler</button>
+        <button className="btn primary" disabled={!valid || !!isPending}
           onClick={() => onSave({ nom: nom.trim(), type, banque: banque.trim() || null })}>
-          Enregistrer
+          {isPending ? <Loader2 size={15} className="spin" /> : 'Enregistrer'}
         </button>
       </div>
     </Modal>

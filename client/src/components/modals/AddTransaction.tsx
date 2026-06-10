@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, Loader2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Modal } from './Modal';
 import { today } from '../../utils/format';
@@ -10,6 +10,7 @@ interface Props {
   members: Member[];
   categories: Category[];
   defaultAccountId: string;
+  isPending?: boolean;
   onClose: () => void;
   onSave: (data: {
     accountId: string; type: 'expense' | 'income';
@@ -19,7 +20,7 @@ interface Props {
 
 const INCOME_CATS = ['c_salaire', 'c_revenus', 'c_divers'];
 
-export function AddTransactionModal({ accounts, members, categories, defaultAccountId, onClose, onSave }: Props) {
+export function AddTransactionModal({ accounts, members, categories, defaultAccountId, isPending, onClose, onSave }: Props) {
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [catId, setCatId] = useState<string | null>(null);
@@ -102,8 +103,8 @@ export function AddTransactionModal({ accounts, members, categories, defaultAcco
       </div>
       <div className="modal-foot">
         <button className="btn ghost" onClick={onClose}>Annuler</button>
-        <button className="btn primary" disabled={!valid} onClick={submit}>
-          Ajouter {valid ? (type === 'expense' ? '−' : '+') + parsedAmount.toFixed(2).replace('.', ',') + ' €' : ''}
+        <button className="btn primary" disabled={!valid || !!isPending} onClick={submit}>
+          {isPending ? <Loader2 size={15} className="spin" /> : <>Ajouter {valid ? (type === 'expense' ? '−' : '+') + parsedAmount.toFixed(2).replace('.', ',') + ' €' : ''}</>}
         </button>
       </div>
     </Modal>

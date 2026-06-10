@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { Minus, Plus, Trash2, Loader2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Modal } from './Modal';
 import type { Transaction, Category, Account, Member } from '../../api/client';
@@ -9,6 +9,7 @@ interface Props {
   categories: Category[];
   accounts: Account[];
   members: Member[];
+  isPending?: boolean;
   onClose: () => void;
   onSave: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
@@ -16,7 +17,7 @@ interface Props {
 
 const INCOME_CATS = ['c_salaire', 'c_revenus', 'c_divers'];
 
-export function EditTransactionModal({ tx, categories, accounts: _accounts, members: _members, onClose, onSave, onDelete }: Props) {
+export function EditTransactionModal({ tx, categories, accounts: _accounts, members: _members, isPending, onClose, onSave, onDelete }: Props) {
   const isTransfer = tx.type === 'transfer';
   const [amount, setAmount] = useState(String(tx.montant).replace('.', ','));
   const [catId, setCatId] = useState<string | null>(tx.categorieId);
@@ -81,19 +82,19 @@ export function EditTransactionModal({ tx, categories, accounts: _accounts, memb
       </div>
       <div className="modal-foot" style={{ flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-          <button className="btn ghost" onClick={onClose} style={{ flex: 1 }}>Annuler</button>
-          <button className="btn primary" disabled={!valid} style={{ flex: 1 }}
+          <button className="btn ghost" onClick={onClose} style={{ flex: 1 }} disabled={!!isPending}>Annuler</button>
+          <button className="btn primary" disabled={!valid || !!isPending} style={{ flex: 1 }}
             onClick={() => onSave({ ...tx, type: isTransfer ? tx.type : type, montant: Math.abs(parsed), categorieId: catId, libelle: libelle.trim(), date, note: note.trim() })}>
-            Enregistrer
+            {isPending ? <Loader2 size={15} className="spin" /> : 'Enregistrer'}
           </button>
         </div>
         {!confirmDel ? (
-          <button className="btn danger" style={{ width: '100%' }} onClick={() => setConfirmDel(true)}>
+          <button className="btn danger" style={{ width: '100%' }} disabled={!!isPending} onClick={() => setConfirmDel(true)}>
             <Trash2 size={15} /> Supprimer
           </button>
         ) : (
-          <button className="btn danger" style={{ width: '100%', background: 'var(--neg)', color: '#fff', borderColor: 'transparent' }} onClick={() => onDelete(tx)}>
-            <Trash2 size={15} /> Confirmer la suppression{isTransfer ? ' (2 écritures)' : ''}
+          <button className="btn danger" style={{ width: '100%', background: 'var(--neg)', color: '#fff', borderColor: 'transparent' }} disabled={!!isPending} onClick={() => onDelete(tx)}>
+            {isPending ? <Loader2 size={15} className="spin" /> : <><Trash2 size={15} /> Confirmer la suppression{isTransfer ? ' (2 écritures)' : ''}</>}
           </button>
         )}
       </div>

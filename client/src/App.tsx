@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Plus, MousePointer2, PenLine, Columns2, Download, Archive,
+  Plus, MousePointer2, PenLine, Columns2, Download, Archive, Loader2,
   Sun, Moon, WalletMinimal, Tags, Receipt, BarChart2, Settings,
 } from 'lucide-react';
 import { Sidebar } from './components/layout/Sidebar';
@@ -328,23 +328,28 @@ export default function App() {
       {/* Modales */}
       {modal?.kind === 'add' && (
         <AddTransactionModal accounts={accounts} members={members} categories={categories}
-          defaultAccountId={modal.accId} onClose={() => setModal(null)} onSave={handleAddTx} />
+          defaultAccountId={modal.accId} isPending={createTx.isPending}
+          onClose={() => setModal(null)} onSave={handleAddTx} />
       )}
       {modal?.kind === 'transfer' && (
         <TransferModal accounts={accounts} members={members} defaultFromId={modal.accId}
+          isPending={createTransfer.isPending}
           onClose={() => setModal(null)} onSave={handleTransfer} />
       )}
       {modal?.kind === 'edit' && (
         <EditTransactionModal tx={modal.tx} categories={categories} accounts={accounts} members={members}
+          isPending={updateTx.isPending || deleteTx.isPending}
           onClose={() => setModal(null)} onSave={handleSaveTx} onDelete={handleDeleteTx} />
       )}
       {modal?.kind === 'account' && (
         <AccountFormModal members={members} defaultMemberId={modal.memberId}
+          isPending={createAccount.isPending}
           onClose={() => setModal(null)} onSave={handleCreateAccount} />
       )}
       {modal?.kind === 'edit-account' && editTargetAccount && (
         <AccountEditModal
           account={editTargetAccount}
+          isPending={updateAccount.isPending}
           onClose={() => setModal(null)}
           onSave={data => handleEditAccount(modal.accId, data)}
         />
@@ -361,9 +366,9 @@ export default function App() {
             </p>
           </div>
           <div className="modal-foot">
-            <button className="btn ghost" onClick={() => setModal(null)}>Annuler</button>
-            <button className="btn danger" onClick={() => handleArchiveAccount(modal.accId)}>
-              <Archive size={15} /> Archiver
+            <button className="btn ghost" onClick={() => setModal(null)} disabled={archiveAccount.isPending}>Annuler</button>
+            <button className="btn danger" disabled={archiveAccount.isPending} onClick={() => handleArchiveAccount(modal.accId)}>
+              {archiveAccount.isPending ? <Loader2 size={15} className="spin" /> : <><Archive size={15} /> Archiver</>}
             </button>
           </div>
         </Modal>
@@ -371,6 +376,7 @@ export default function App() {
       {modal?.kind === 'categories' && (
         <CategoriesModal
           categories={categories}
+          isPending={createCategory.isPending || updateCategory.isPending || deleteCategory.isPending}
           onClose={() => setModal(null)}
           onCreate={handleCreateCategory}
           onUpdate={handleUpdateCategory}
@@ -378,11 +384,13 @@ export default function App() {
         />
       )}
       {modal?.kind === 'member' && (
-        <MemberFormModal onClose={() => setModal(null)} onSave={handleCreateMember} />
+        <MemberFormModal isPending={createMember.isPending}
+          onClose={() => setModal(null)} onSave={handleCreateMember} />
       )}
       {modal?.kind === 'edit-member' && (
         <MemberFormModal
           member={modal.member}
+          isPending={updateMember.isPending}
           onClose={() => setModal(null)}
           onSave={data => handleEditMember(modal.member.id, data)}
         />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { Minus, Plus, Trash2, Loader2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Modal } from './Modal';
 import type { Recurrence, Category } from '../../api/client';
@@ -8,6 +8,7 @@ interface Props {
   recurrence?: Recurrence; // undefined = création
   accountId: string;
   categories: Category[];
+  isPending?: boolean;
   onClose: () => void;
   onCreate: (data: Omit<Recurrence, 'id'>) => void;
   onUpdate: (id: string, data: Omit<Recurrence, 'id'>) => void;
@@ -16,7 +17,7 @@ interface Props {
 
 const INCOME_CATS = ['c_salaire', 'c_revenus', 'c_divers'];
 
-export function RecurrenceFormModal({ recurrence, accountId, categories, onClose, onCreate, onUpdate, onDelete }: Props) {
+export function RecurrenceFormModal({ recurrence, accountId, categories, isPending, onClose, onCreate, onUpdate, onDelete }: Props) {
   const isEdit = !!recurrence;
 
   const [sens, setSens] = useState<'income' | 'expense'>(recurrence?.sens ?? 'expense');
@@ -104,19 +105,19 @@ export function RecurrenceFormModal({ recurrence, accountId, categories, onClose
 
       <div className="modal-foot" style={{ flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-          <button className="btn ghost" onClick={onClose} style={{ flex: 1 }}>Annuler</button>
-          <button className="btn primary" disabled={!valid} style={{ flex: 1 }} onClick={handleSave}>
-            {isEdit ? 'Enregistrer' : 'Créer'}
+          <button className="btn ghost" onClick={onClose} style={{ flex: 1 }} disabled={!!isPending}>Annuler</button>
+          <button className="btn primary" disabled={!valid || !!isPending} style={{ flex: 1 }} onClick={handleSave}>
+            {isPending ? <Loader2 size={15} className="spin" /> : (isEdit ? 'Enregistrer' : 'Créer')}
           </button>
         </div>
         {isEdit && (
           confirmDel ? (
             <button className="btn danger" style={{ width: '100%', background: 'var(--neg)', color: '#fff', borderColor: 'transparent' }}
-              onClick={() => onDelete(recurrence!.id)}>
-              <Trash2 size={15} /> Confirmer la suppression
+              disabled={!!isPending} onClick={() => onDelete(recurrence!.id)}>
+              {isPending ? <Loader2 size={15} className="spin" /> : <><Trash2 size={15} /> Confirmer la suppression</>}
             </button>
           ) : (
-            <button className="btn danger" style={{ width: '100%' }} onClick={() => setConfirmDel(true)}>
+            <button className="btn danger" style={{ width: '100%' }} disabled={!!isPending} onClick={() => setConfirmDel(true)}>
               <Trash2 size={15} /> Supprimer
             </button>
           )

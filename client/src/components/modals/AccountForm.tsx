@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Modal } from './Modal';
 import type { Member } from '../../api/client';
 
 interface Props {
   members: Member[];
   defaultMemberId?: string;
+  isPending?: boolean;
   onClose: () => void;
   onSave: (data: { memberId: string; nom: string; type: 'courant' | 'epargne' | 'autre'; banque: string | null; soldeInitial: number }) => void;
 }
 
-export function AccountFormModal({ members, defaultMemberId, onClose, onSave }: Props) {
+export function AccountFormModal({ members, defaultMemberId, isPending, onClose, onSave }: Props) {
   const [memberId, setMemberId] = useState(defaultMemberId ?? members[0]?.id ?? '');
   const [nom, setNom] = useState('');
   const [type, setType] = useState<'courant' | 'epargne' | 'autre'>('courant');
@@ -47,10 +49,10 @@ export function AccountFormModal({ members, defaultMemberId, onClose, onSave }: 
         </div>
       </div>
       <div className="modal-foot">
-        <button className="btn ghost" onClick={onClose}>Annuler</button>
-        <button className="btn primary" disabled={!valid}
+        <button className="btn ghost" onClick={onClose} disabled={!!isPending}>Annuler</button>
+        <button className="btn primary" disabled={!valid || !!isPending}
           onClick={() => onSave({ memberId, nom: nom.trim(), type, banque: banque.trim() || null, soldeInitial: parseFloat(solde.replace(',', '.')) || 0 })}>
-          Créer le compte
+          {isPending ? <Loader2 size={15} className="spin" /> : 'Créer le compte'}
         </button>
       </div>
     </Modal>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Check, X, ArrowLeft, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, ArrowLeft, Search, Loader2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import type { ComponentType } from 'react';
 import { Modal } from './Modal';
@@ -7,6 +7,7 @@ import type { Category } from '../../api/client';
 
 interface Props {
   categories: Category[];
+  isPending?: boolean;
   onClose: () => void;
   onCreate: (data: Partial<Category>) => void;
   onUpdate: (id: string, data: Partial<Category>) => void;
@@ -211,7 +212,7 @@ function IconPicker({ value, hue, onChange }: { value: string; hue: number; onCh
 }
 
 // ── Main component ────────────────────────────────────────────────
-export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDelete }: Props) {
+export function CategoriesModal({ categories, isPending, onClose, onCreate, onUpdate, onDelete }: Props) {
   const [view, setView] = useState<ViewMode>('list');
   const [editing, setEditing] = useState<Category | null>(null);
 
@@ -320,7 +321,7 @@ export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDel
           placeholder="Ex. Alimentation, Transport…"
           value={nom}
           onChange={e => setNom(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && valid) handleSave(); }}
+          onKeyDown={e => { if (e.key === 'Enter' && valid && !isPending) handleSave(); }}
         />
 
         {/* Icône picker */}
@@ -344,11 +345,11 @@ export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDel
 
       <div className="modal-foot" style={{ flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-          <button className="btn ghost" onClick={backToList} style={{ gap: 6 }}>
+          <button className="btn ghost" onClick={backToList} style={{ gap: 6 }} disabled={!!isPending}>
             <ArrowLeft size={14} /> Retour
           </button>
-          <button className="btn primary" disabled={!valid} style={{ flex: 1 }} onClick={handleSave}>
-            <Check size={15} /> {editing ? 'Enregistrer' : 'Créer'}
+          <button className="btn primary" disabled={!valid || !!isPending} style={{ flex: 1 }} onClick={handleSave}>
+            {isPending ? <Loader2 size={15} className="spin" /> : <><Check size={15} /> {editing ? 'Enregistrer' : 'Créer'}</>}
           </button>
         </div>
 
@@ -357,12 +358,13 @@ export function CategoriesModal({ categories, onClose, onCreate, onUpdate, onDel
             <button
               className="btn danger"
               style={{ width: '100%', background: 'var(--neg)', color: '#fff', borderColor: 'transparent' }}
+              disabled={!!isPending}
               onClick={handleDelete}
             >
-              <Trash2 size={15} /> Confirmer la suppression
+              {isPending ? <Loader2 size={15} className="spin" /> : <><Trash2 size={15} /> Confirmer la suppression</>}
             </button>
           ) : (
-            <button className="btn danger" style={{ width: '100%' }} onClick={() => setConfirmDel(true)}>
+            <button className="btn danger" style={{ width: '100%' }} disabled={!!isPending} onClick={() => setConfirmDel(true)}>
               <Trash2 size={15} /> Supprimer
             </button>
           )

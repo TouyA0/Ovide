@@ -394,6 +394,7 @@ function RecurrencesSection({ account, categories }: { account: Account; categor
           recurrence={modal === 'create' ? undefined : modal}
           accountId={account.id}
           categories={categories}
+          isPending={createRec.isPending || updateRec.isPending || deleteRec.isPending}
           onClose={() => setModal(null)}
           onCreate={handleCreate}
           onUpdate={handleUpdate}

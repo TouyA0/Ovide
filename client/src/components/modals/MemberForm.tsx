@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Modal } from './Modal';
 import type { Member } from '../../api/client';
 
 interface Props {
   member?: Member; // undefined = création
+  isPending?: boolean;
   onClose: () => void;
   onSave: (data: { nom: string; couleur: string; initiales: string }) => void;
 }
@@ -19,7 +21,7 @@ const PRESET_COLORS = [
   { label: 'Cyan',     value: 'h' },
 ];
 
-export function MemberFormModal({ member, onClose, onSave }: Props) {
+export function MemberFormModal({ member, isPending, onClose, onSave }: Props) {
   const isEdit = !!member;
   const [nom, setNom] = useState(member?.nom ?? '');
   const [couleur, setCouleur] = useState(member?.couleur ?? 'q');
@@ -51,7 +53,7 @@ export function MemberFormModal({ member, onClose, onSave }: Props) {
           value={nom}
           onChange={e => setNom(e.target.value)}
           autoFocus
-          onKeyDown={e => { if (e.key === 'Enter' && valid) onSave({ nom: nom.trim(), couleur, initiales }); }}
+          onKeyDown={e => { if (e.key === 'Enter' && valid && !isPending) onSave({ nom: nom.trim(), couleur, initiales }); }}
         />
 
         <div className="field-label" style={{ marginTop: 12 }}>Couleur</div>
@@ -68,10 +70,10 @@ export function MemberFormModal({ member, onClose, onSave }: Props) {
         </div>
       </div>
       <div className="modal-foot">
-        <button className="btn ghost" onClick={onClose}>Annuler</button>
-        <button className="btn primary" disabled={!valid}
+        <button className="btn ghost" onClick={onClose} disabled={!!isPending}>Annuler</button>
+        <button className="btn primary" disabled={!valid || !!isPending}
           onClick={() => onSave({ nom: nom.trim(), couleur, initiales })}>
-          {isEdit ? 'Enregistrer' : 'Ajouter'}
+          {isPending ? <Loader2 size={15} className="spin" /> : (isEdit ? 'Enregistrer' : 'Ajouter')}
         </button>
       </div>
     </Modal>
