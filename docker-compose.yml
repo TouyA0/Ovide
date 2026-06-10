@@ -1,14 +1,19 @@
 services:
   app:
     build: .
+    image: ovide-tresorerie
+    container_name: ovide-tresorerie
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3004:3000"
     volumes:
       - ./data:/app/data
+      - ./uploads:/app/uploads
     environment:
       - NODE_ENV=production
       - DB_PATH=/app/data/comptes.db
-      # CF_ACCESS_AUD et CF_ACCESS_CERTS sont à renseigner si CF Access est actif
-      # - CF_ACCESS_AUD=
-      # - CF_ACCESS_CERTS_URL=https://<team>.cloudflareaccess.com/cdn-cgi/access/certs
+      # Cloudflare Access — renseigner si le tunnel CF Access est activé
+      # - CF_ACCESS_AUD=<ton-audience-tag>
+      # - CF_ACCESS_CERTS_URL=https://<ton-equipe>.cloudflareaccess.com/cdn-cgi/access/certs
+    env_file:
+      - .env
