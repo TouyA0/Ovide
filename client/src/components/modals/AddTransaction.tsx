@@ -3,11 +3,9 @@ import { Minus, Plus, Loader2 } from 'lucide-react';
 import { Modal } from './Modal';
 import { CategoryPicker } from '../ui/CategoryPicker';
 import { today } from '../../utils/format';
-import type { Account, Member, Category } from '../../api/client';
+import type { Category } from '../../api/client';
 
 interface Props {
-  accounts: Account[];
-  members: Member[];
   categories: Category[];
   defaultAccountId: string;
   isPending?: boolean;
@@ -18,14 +16,13 @@ interface Props {
   }) => void;
 }
 
-export function AddTransactionModal({ accounts, members, categories, defaultAccountId, isPending, onClose, onSave }: Props) {
+export function AddTransactionModal({ categories, defaultAccountId, isPending, onClose, onSave }: Props) {
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [catId, setCatId] = useState<string | null>(null);
   const [libelle, setLibelle] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(today());
-  const [accId, setAccId] = useState(defaultAccountId || accounts[0]?.id);
   const amountRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { const t = setTimeout(() => amountRef.current?.focus(), 80); return () => clearTimeout(t); }, []);
@@ -35,7 +32,7 @@ export function AddTransactionModal({ accounts, members, categories, defaultAcco
 
   const submit = () => {
     if (!valid || !catId) return;
-    onSave({ accountId: accId, type, montant: Math.abs(parsedAmount), categorieId: catId, libelle: libelle.trim(), date, note: note.trim() });
+    onSave({ accountId: defaultAccountId, type, montant: Math.abs(parsedAmount), categorieId: catId, libelle: libelle.trim(), date, note: note.trim() });
   };
 
   const onAmountKey = (e: React.KeyboardEvent) => {
@@ -46,11 +43,11 @@ export function AddTransactionModal({ accounts, members, categories, defaultAcco
     <Modal title="Nouvelle opération" onClose={onClose}>
       <div className="modal-body">
         <div className="type-toggle">
-          <button className={`type-opt exp${type === 'expense' ? ' on' : ''}`} onClick={() => setType('expense')}>
+          <button className={`type-opt exp${type === 'expense' ? ' on' : ''}`} onClick={() => { setType('expense'); setCatId(null); }}>
             <span className="t-ic" style={{ background: type === 'expense' ? 'var(--neg)' : 'var(--surface-2)', color: type === 'expense' ? '#fff' : 'var(--text-3)' }}><Minus size={17} strokeWidth={2.6} /></span>
             Dépense
           </button>
-          <button className={`type-opt inc${type === 'income' ? ' on' : ''}`} onClick={() => { setType('income'); if (!INCOME_CATS.includes(catId ?? '')) setCatId(null); }}>
+          <button className={`type-opt inc${type === 'income' ? ' on' : ''}`} onClick={() => { setType('income'); setCatId(null); }}>
             <span className="t-ic" style={{ background: type === 'income' ? 'var(--pos)' : 'var(--surface-2)', color: type === 'income' ? '#fff' : 'var(--text-3)' }}><Plus size={17} strokeWidth={2.6} /></span>
             Entrée
           </button>
@@ -73,17 +70,8 @@ export function AddTransactionModal({ accounts, members, categories, defaultAcco
           <textarea className="input" placeholder="Note (optionnelle)" value={note} onChange={e => setNote(e.target.value)}
             rows={2} style={{ resize: 'none', lineHeight: 1.5 }} />
         </div>
-        <div className="row2" style={{ marginTop: 10 }}>
+        <div className="field" style={{ marginTop: 10 }}>
           <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} aria-label="Date" />
-          <select className="selectx" value={accId} onChange={e => setAccId(e.target.value)} aria-label="Compte">
-            {members.map(m => (
-              <optgroup key={m.id} label={m.nom}>
-                {accounts.filter(a => a.memberId === m.id).map(a => (
-                  <option key={a.id} value={a.id}>{m.nom} · {a.nom}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
         </div>
       </div>
       <div className="modal-foot">

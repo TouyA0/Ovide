@@ -331,7 +331,7 @@ export default function App() {
 
       {/* Modales */}
       {modal?.kind === 'add' && (
-        <AddTransactionModal accounts={accounts} members={members} categories={categories}
+        <AddTransactionModal categories={categories}
           defaultAccountId={modal.accId} isPending={createTx.isPending}
           onClose={() => setModal(null)} onSave={handleAddTx} />
       )}
