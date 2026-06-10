@@ -156,7 +156,7 @@ function StatsSection({ account, member, categories }: { account: Account; membe
         <div className="card-head">
           <div>
             <div className="card-title">Évolution du solde</div>
-            <div className="card-sub">Solde de fin de mois</div>
+            <div className="card-sub">{range === 'mois' ? 'Solde jour par jour' : 'Solde de fin de mois'}</div>
           </div>
           <div className="seg">
             <button className={range === 'mois' ? 'on' : ''} onClick={() => setRange('mois')}>Mois</button>
