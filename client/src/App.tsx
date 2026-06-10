@@ -129,6 +129,11 @@ export default function App() {
     setModal(null);
   };
 
+  const handleUnarchiveAccount = async (accId: string) => {
+    await archiveAccount.mutateAsync({ id: accId, archive: false });
+    pushToast('Compte remis en actif');
+  };
+
   const handleCreateMember = async (data: Parameters<typeof createMember.mutateAsync>[0]) => {
     await createMember.mutateAsync(data);
     pushToast('Membre ajouté');
@@ -143,16 +148,26 @@ export default function App() {
     }
   };
 
-  const ctxActions = (accId: string) => [
-    { icon: <MousePointer2 size={16} />, label: 'Ouvrir', fn: () => layout.openTab(accId) },
-    { icon: <Plus size={16} />, label: 'Ouvrir dans un nouvel onglet', fn: () => layout.openInNewTab(accId) },
-    { icon: <Columns2 size={16} />, label: 'Ouvrir dans la vue scindée', fn: () => layout.openInSplit(accId) },
-    { sep: true },
-    { icon: <Download size={16} />, label: 'Exporter en CSV', fn: () => handleExport(accId) },
-    { icon: <PenLine size={16} />, label: 'Renommer', fn: () => setModal({ kind: 'edit-account', accId }) },
-    { sep: true },
-    { icon: <Archive size={16} />, label: 'Archiver le compte', danger: true, fn: () => setModal({ kind: 'archive-account', accId }) },
-  ];
+  const ctxActions = (accId: string) => {
+    const acc = accounts.find(a => a.id === accId);
+    const isArchived = acc?.archive ?? false;
+    return [
+      ...(!isArchived ? [
+        { icon: <MousePointer2 size={16} />, label: 'Ouvrir', fn: () => layout.openTab(accId) },
+        { icon: <Plus size={16} />, label: 'Ouvrir dans un nouvel onglet', fn: () => layout.openInNewTab(accId) },
+        { icon: <Columns2 size={16} />, label: 'Ouvrir dans la vue scindée', fn: () => layout.openInSplit(accId) },
+        { sep: true },
+      ] : []),
+      { icon: <Download size={16} />, label: 'Exporter en CSV', fn: () => handleExport(accId) },
+      ...(!isArchived ? [
+        { icon: <PenLine size={16} />, label: 'Renommer', fn: () => setModal({ kind: 'edit-account' as const, accId }) },
+      ] : []),
+      { sep: true },
+      isArchived
+        ? { icon: <Archive size={16} />, label: 'Désarchiver le compte', fn: () => handleUnarchiveAccount(accId) }
+        : { icon: <Archive size={16} />, label: 'Archiver le compte', danger: true, fn: () => setModal({ kind: 'archive-account' as const, accId }) },
+    ];
+  };
 
   const newTab = () => {
     const notOpen = accounts.find(a => !layout.tabs.includes(a.id) && !a.archive);
