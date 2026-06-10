@@ -51,7 +51,7 @@ export const api = {
 
   // Stats
   getBalanceSeries: (accountId: string, range: 'mois' | 'six' | 'annee') =>
-    request<BalancePoint[]>(`/stats/${accountId}/balance-series?range=${range}`),
+    request<{ series: BalancePoint[]; projection: BalancePoint[] }>(`/stats/${accountId}/balance-series?range=${range}`),
   getBars: (accountId: string, months?: number) =>
     request<BarPoint[]>(`/stats/${accountId}/bars?months=${months ?? 6}`),
   getComparison: (accountId: string) =>

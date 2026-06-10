@@ -13,7 +13,7 @@ router.get('/:accountId/balance-series', (req, res) => {
   const acc = db.select().from(accounts).where(eq(accounts.id, req.params.accountId)).get();
   if (!acc) { res.status(404).json({ error: 'Compte introuvable' }); return; }
   const range = (req.query.range as 'mois' | 'six' | 'annee') ?? 'six';
-  res.json(getBalanceSeries(acc.id, acc.soldeInitial, range, today()));
+  res.json(getBalanceSeries(acc.id, acc.soldeInitial, range, today(), acc.previsionsActivees ?? false));
 });
 
 router.get('/:accountId/bars', (req, res) => {

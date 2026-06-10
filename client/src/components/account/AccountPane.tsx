@@ -163,7 +163,13 @@ function StatsSection({ account, member, categories }: { account: Account; membe
             <button className={range === 'annee' ? 'on' : ''} onClick={() => setRange('annee')}>12 mois</button>
           </div>
         </div>
-        {balSeries.data && <BalanceChart series={balSeries.data} accentVar={accentVar} />}
+        {balSeries.data && (
+          <BalanceChart
+            series={balSeries.data.series}
+            projection={balSeries.data.projection}
+            accentVar={accentVar}
+          />
+        )}
       </div>
 
       <div className="grid charts-2" style={{ gridTemplateColumns: '1fr 1fr', gap: 16 }}>

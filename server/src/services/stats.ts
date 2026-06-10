@@ -1,6 +1,9 @@
 import { db } from '../db/client';
-import { transactions } from '../db/schema';
+import { transactions, recurrences } from '../db/schema';
 import { eq, sql, and, like } from 'drizzle-orm';
+
+export interface BalancePoint { label: string; value: number; }
+export interface BalanceSeries { series: BalancePoint[]; projection: BalancePoint[]; }
 
 function monthPrefix(y: number, m: number) {
   return `${y}-${String(m).padStart(2, '0')}`;
@@ -53,28 +56,79 @@ function monthAgg(accountId: string, prefix: string) {
   return { income, expense, net: income - expense };
 }
 
-export function getBalanceSeries(accountId: string, soldeInitial: number, range: 'mois' | 'six' | 'annee', today: string) {
+// Recurrences signed monthly net + per-day items for a given account
+function recurrenceItems(accountId: string) {
+  const recs = db.select().from(recurrences).where(eq(recurrences.accountId, accountId)).all();
+  const items = recs.map(r => ({
+    jourDuMois: r.jourDuMois,
+    signed: r.sens === 'income' ? r.montant : -r.montant,
+  }));
+  const net = items.reduce((s, r) => s + r.signed, 0);
+  return { net, items };
+}
+
+export function getBalanceSeries(
+  accountId: string,
+  soldeInitial: number,
+  range: 'mois' | 'six' | 'annee',
+  today: string,
+  previsionsActivees: boolean,
+): BalanceSeries {
   const [TY, TM, TD] = today.split('-').map(Number);
+  const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  const lastDay = new Date(TY, TM, 0).getDate();
 
   if (range === 'mois') {
-    const series = [];
+    const series: BalancePoint[] = [];
     for (let d = 1; d <= TD; d++) {
       const iso = `${TY}-${String(TM).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       series.push({ label: String(d), value: balanceAt(accountId, soldeInitial, iso) });
     }
-    return series;
+
+    const projection: BalancePoint[] = [];
+    if (previsionsActivees && TD < lastDay) {
+      const { items } = recurrenceItems(accountId);
+      let running = balanceAt(accountId, soldeInitial, today);
+      for (let d = TD + 1; d <= lastDay; d++) {
+        for (const item of items) {
+          if (Math.min(item.jourDuMois, lastDay) === d) running += item.signed;
+        }
+        projection.push({ label: String(d), value: running });
+      }
+    }
+    return { series, projection };
   }
 
+  // "six" or "annee"
   const months = range === 'annee' ? 12 : 6;
-  const series = [];
+  const series: BalancePoint[] = [];
   for (let i = months - 1; i >= 0; i--) {
     let y = TY, m = TM - 1 - i;
     while (m < 0) { m += 12; y -= 1; }
     const end = i === 0 ? today : endOfMonth(y, m + 1);
-    const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
     series.push({ label: MONTHS[m], value: balanceAt(accountId, soldeInitial, end) });
   }
-  return series;
+
+  const projection: BalancePoint[] = [];
+  if (previsionsActivees) {
+    const { net } = recurrenceItems(accountId);
+
+    // Anchor all projections on the last confirmed month-end so that ALL
+    // recurring items (including ones before today in the current month)
+    // are taken into account uniformly — no partial-month filtering.
+    let prevY = TY, prevM = TM - 1;
+    if (prevM < 1) { prevM = 12; prevY -= 1; }
+    const baseBalance = balanceAt(accountId, soldeInitial, endOfMonth(prevY, prevM));
+
+    // Project only future months (skip current month to avoid duplicate label on X-axis)
+    // base + 2×net = end of next month, base + 3×net = end of month after, etc.
+    const futureMths = range === 'annee' ? 2 : 1;
+    for (let i = 1; i <= futureMths; i++) {
+      const m = (TM - 1 + i) % 12;
+      projection.push({ label: MONTHS[m], value: baseBalance + net * (i + 1) });
+    }
+  }
+  return { series, projection };
 }
 
 export function getMonthBars(accountId: string, months: number, today: string) {
