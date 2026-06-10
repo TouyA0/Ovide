@@ -8,6 +8,7 @@ interface Props {
   accounts: Account[];
   activeId: string | null;
   onOpen: (id: string) => void;
+  onOpenDashboard: () => void;
   onContext: (x: number, y: number, accId: string) => void;
   onMemberContext: (x: number, y: number, member: Member) => void;
   onAddAccount: (memberId: string) => void;
@@ -15,7 +16,7 @@ interface Props {
   onOpenCategories: () => void;
 }
 
-export function Sidebar({ members, accounts, activeId, onOpen, onContext, onMemberContext, onAddAccount, onAddMember, onOpenCategories }: Props) {
+export function Sidebar({ members, accounts, activeId, onOpen, onOpenDashboard, onContext, onMemberContext, onAddAccount, onAddMember, onOpenCategories }: Props) {
   const [open, setOpen] = useState<Record<string, boolean>>(
     () => Object.fromEntries(members.map(m => [m.id, true]))
   );
@@ -23,13 +24,13 @@ export function Sidebar({ members, accounts, activeId, onOpen, onContext, onMemb
 
   return (
     <aside className="sidebar">
-      <div className="brand">
+      <button className="brand" onClick={onOpenDashboard} style={{ width: '100%', textAlign: 'left' }}>
         <div className="brand-mark"><WalletMinimal size={19} /></div>
         <div>
           <div className="brand-name">Foyer</div>
           <div className="brand-sub">Comptes</div>
         </div>
-      </div>
+      </button>
       <div className="side-scroll">
         <div className="side-section-label">Membres</div>
         {members.map(m => {

@@ -12,6 +12,7 @@ interface LayoutState {
   openInSplit: (id: string) => void;
   closeTab: (id: string) => void;
   setActive: (id: string) => void;
+  openDashboard: () => void;
   toggleSplit: (fallbackId?: string) => void;
   toggleTheme: () => void;
   initTabs: (ids: string[]) => void;
@@ -62,6 +63,7 @@ export const useLayout = create<LayoutState>((set, get) => ({
   },
 
   setActive: (id) => set({ activeId: id }),
+  openDashboard: () => set({ activeId: null }),
 
   toggleSplit: (fallbackId) => {
     const { splitOn, tabs, activeId } = get();

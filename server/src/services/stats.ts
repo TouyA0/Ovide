@@ -1,6 +1,6 @@
 import { db } from '../db/client';
 import { transactions, recurrences } from '../db/schema';
-import { eq, sql, and, like } from 'drizzle-orm';
+import { eq, sql, and, like, inArray } from 'drizzle-orm';
 
 export interface BalancePoint { label: string; value: number; }
 export interface BalanceSeries { series: BalancePoint[]; projection: BalancePoint[]; }
@@ -151,6 +151,50 @@ export function getComparison(accountId: string, today: string) {
   if (pm < 1) { pm = 12; py -= 1; }
   const prev = monthPrefix(py, pm);
   return { cur: monthAgg(accountId, cur), prev: monthAgg(accountId, prev) };
+}
+
+function globalMonthAgg(accountIds: string[], prefix: string) {
+  if (accountIds.length === 0) return { income: 0, expense: 0, net: 0 };
+  const rows = db
+    .select({ type: transactions.type, total: sql<number>`SUM(montant)`.as('total') })
+    .from(transactions)
+    .where(and(inArray(transactions.accountId, accountIds), like(transactions.date, `${prefix}%`), sql`type IN ('income','expense')`))
+    .groupBy(transactions.type)
+    .all();
+  let income = 0, expense = 0;
+  for (const r of rows) {
+    if (r.type === 'income') income = r.total ?? 0;
+    if (r.type === 'expense') expense = r.total ?? 0;
+  }
+  return { income, expense, net: income - expense };
+}
+
+export function getGlobalStats(accountIds: string[], byMember: Record<string, string[]>, today: string) {
+  const [TY, TM] = today.split('-').map(Number);
+  const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  let py = TY, pm = TM - 1;
+  if (pm < 1) { pm = 12; py -= 1; }
+
+  const globalCur = globalMonthAgg(accountIds, monthPrefix(TY, TM));
+  const globalPrev = globalMonthAgg(accountIds, monthPrefix(py, pm));
+
+  const monthlyBars = [];
+  for (let i = 5; i >= 0; i--) {
+    let y = TY, m = TM - 1 - i;
+    while (m < 0) { m += 12; y -= 1; }
+    const { income, expense } = globalMonthAgg(accountIds, monthPrefix(y, m + 1));
+    monthlyBars.push({ label: MONTHS[m], income, expense });
+  }
+
+  const memberStats: Record<string, { cur: ReturnType<typeof globalMonthAgg>; prev: ReturnType<typeof globalMonthAgg> }> = {};
+  for (const [memberId, mIds] of Object.entries(byMember)) {
+    memberStats[memberId] = {
+      cur: globalMonthAgg(mIds, monthPrefix(TY, TM)),
+      prev: globalMonthAgg(mIds, monthPrefix(py, pm)),
+    };
+  }
+
+  return { globalCur, globalPrev, monthlyBars, byMember: memberStats };
 }
 
 export function getCategoryDonut(accountId: string, today: string) {

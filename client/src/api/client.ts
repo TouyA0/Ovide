@@ -80,6 +80,9 @@ export const api = {
   getForecast: (accountId: string) =>
     request<ForecastItem[]>(`/stats/${accountId}/forecast`),
 
+  // Global stats
+  getGlobalStats: () => request<GlobalStats>('/stats/global'),
+
   // Export
   exportCsv: (accountId: string) => `${BASE}/export/${accountId}/csv`,
 };
@@ -148,6 +151,13 @@ export interface ComparisonData {
 }
 export interface DonutSlice { categorieId: string | null; total: number; }
 export interface ForecastItem extends Recurrence { date: string; day: number; }
+
+export interface GlobalStats {
+  globalCur: { income: number; expense: number; net: number };
+  globalPrev: { income: number; expense: number; net: number };
+  monthlyBars: BarPoint[];
+  byMember: Record<string, { cur: { income: number; expense: number; net: number }; prev: { income: number; expense: number; net: number } }>;
+}
 
 export interface BankImport {
   id: string;

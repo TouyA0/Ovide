@@ -9,6 +9,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import { TabBar } from './components/layout/TabBar';
 import { ContextMenu } from './components/layout/ContextMenu';
 import { AccountPane } from './components/account/AccountPane';
+import { DashboardPane } from './components/dashboard/DashboardPane';
 import { AddTransactionModal } from './components/modals/AddTransaction';
 import { TransferModal } from './components/modals/Transfer';
 import { EditTransactionModal } from './components/modals/EditTransaction';
@@ -336,6 +337,7 @@ export default function App() {
         <Sidebar
           members={members} accounts={accounts} activeId={layout.activeId}
           onOpen={layout.openTab}
+          onOpenDashboard={layout.openDashboard}
           onContext={(x, y, accId) => setCtx({ x, y, accId })}
           onMemberContext={(x, y, m) => setMemberCtx({ x, y, member: m })}
           onAddAccount={(memberId) => setModal({ kind: 'account', memberId })}
@@ -344,6 +346,13 @@ export default function App() {
         />
         <div className="main">
           <div className="panes">
+            {!layout.activeId && (
+              <DashboardPane
+                members={members}
+                accounts={accounts}
+                onOpenAccount={layout.openTab}
+              />
+            )}
             {activePaneProps && (
               <AccountPane
                 key={layout.activeId!}

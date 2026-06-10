@@ -77,6 +77,10 @@ export function useForecast(accountId: string) {
   });
 }
 
+export function useGlobalStats() {
+  return useQuery({ queryKey: ['globalStats'], queryFn: api.getGlobalStats });
+}
+
 /* ── Mutations ────────────────────────────────────────────────── */
 
 export function useCreateTransaction() {
