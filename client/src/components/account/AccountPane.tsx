@@ -26,12 +26,13 @@ interface Props {
   onImport: () => void;
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
+  onTxContext: (x: number, y: number, tx: Transaction) => void;
   onConfirmForecast: (f: ForecastItem, date?: string) => Promise<string>;
   onSkipForecast: (f: ForecastItem) => Promise<void>;
   onTogglePrevisions: () => void;
 }
 
-export function AccountPane({ account, member, accounts, members, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onImport, onEdit, onDelete, onConfirmForecast, onSkipForecast, onTogglePrevisions }: Props) {
+export function AccountPane({ account, member, accounts, members, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onImport, onEdit, onDelete, onTxContext, onConfirmForecast, onSkipForecast, onTogglePrevisions }: Props) {
   return (
     <div className={`pane m-active${isSplitTarget ? ' is-split-target' : ''}`} data-section={mobileSection}>
       <div className="pane-inner">
@@ -40,7 +41,7 @@ export function AccountPane({ account, member, accounts, members, categories, is
           <StatsSection account={account} member={member} categories={categories} />
         </div>
         <div className="m-section-tx">
-          <TransactionList account={account} accounts={accounts} members={members} categories={categories} onEdit={onEdit} onDelete={onDelete} onConfirmForecast={onConfirmForecast} onSkipForecast={onSkipForecast} />
+          <TransactionList account={account} accounts={accounts} members={members} categories={categories} onEdit={onEdit} onDelete={onDelete} onTxContext={onTxContext} onConfirmForecast={onConfirmForecast} onSkipForecast={onSkipForecast} />
           {account.type === 'courant' && (
             <RecurrencesSection account={account} categories={categories} />
           )}
@@ -250,10 +251,11 @@ function DateStepper({ value, min, max, onChange }: { value: string; min?: strin
 /* ---- Transaction list ---- */
 const TX_PAGE = 20;
 
-function TransactionList({ account, accounts, members, categories, onEdit, onDelete, onConfirmForecast, onSkipForecast }: {
+function TransactionList({ account, accounts, members, categories, onEdit, onDelete, onTxContext, onConfirmForecast, onSkipForecast }: {
   account: Account; accounts: Account[]; members: Member[]; categories: Category[];
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
+  onTxContext: (x: number, y: number, tx: Transaction) => void;
   onConfirmForecast: (f: ForecastItem, date?: string) => Promise<string>;
   onSkipForecast: (f: ForecastItem) => Promise<void>;
 }) {
@@ -561,7 +563,7 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
               ] : null;
               const [, txM, txD] = t.date.split('-').map(Number);
               return (
-                <button className={`tx-row${t.id === flashId ? ' tx-flash' : ''}`} key={t.id} onClick={() => onEdit(t)}>
+                <button className={`tx-row${t.id === flashId ? ' tx-flash' : ''}`} key={t.id} onClick={() => onEdit(t)} onContextMenu={e => { e.preventDefault(); onTxContext(e.clientX, e.clientY, t); }}>
                   {/* Date stamp — visible uniquement sur la 1re ligne du groupe */}
                   <span className={`tx-stamp${ti > 0 ? ' blank' : ''}`}>
                     <span className="tx-stamp-d">{txD}</span>

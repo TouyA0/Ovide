@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import {
   Plus, MousePointer2, PenLine, Columns2, Download, Archive, Loader2,
   Sun, Moon, WalletMinimal, Tags, Receipt, BarChart2, Settings,
+  Copy, Trash2,
 } from 'lucide-react';
+import { fmtEur } from './utils/format';
 import { Sidebar } from './components/layout/Sidebar';
 import { TabBar } from './components/layout/TabBar';
 import { ContextMenu } from './components/layout/ContextMenu';
@@ -39,10 +41,12 @@ type ModalState =
   | { kind: 'edit-member'; member: Member }
   | { kind: 'categories' }
   | { kind: 'import'; accId: string }
+  | { kind: 'confirm-delete-tx'; tx: Transaction }
   | null;
 
 type CtxState = { x: number; y: number; accId: string } | null;
 type MemberCtxState = { x: number; y: number; member: Member } | null;
+type TxCtxState = { x: number; y: number; tx: Transaction } | null;
 
 export default function App() {
   const layout = useLayout();
@@ -52,6 +56,7 @@ export default function App() {
   const [modal, setModal] = useState<ModalState>(null);
   const [ctx, setCtx] = useState<CtxState>(null);
   const [memberCtx, setMemberCtx] = useState<MemberCtxState>(null);
+  const [txCtx, setTxCtx] = useState<TxCtxState>(null);
   const [mobileSection, setMobileSection] = useState<'transactions' | 'stats'>('transactions');
 
   // Data
@@ -110,6 +115,19 @@ export default function App() {
     await deleteTx.mutateAsync(tx.id);
     pushToast('Opération supprimée', 'trash-2');
     setModal(null);
+  };
+
+  const handleDuplicateTx = async (tx: Transaction) => {
+    await createTx.mutateAsync({
+      accountId: tx.accountId,
+      type: tx.type as 'income' | 'expense',
+      montant: tx.montant,
+      categorieId: tx.categorieId ?? undefined,
+      libelle: tx.libelle,
+      date: tx.date,
+      note: tx.note,
+    });
+    pushToast('Opération dupliquée', 'copy-2');
   };
 
   const handleTransfer = async (data: Parameters<typeof createTransfer.mutateAsync>[0]) => {
@@ -337,6 +355,7 @@ export default function App() {
                 onImport={() => setModal({ kind: 'import', accId: layout.activeId! })}
                 onEdit={tx => setModal({ kind: 'edit', tx })}
                 onDelete={handleDeleteTx}
+                onTxContext={(x, y, tx) => setTxCtx({ x, y, tx })}
                 onConfirmForecast={handleConfirmForecast}
                 onSkipForecast={handleSkipForecast}
                 onTogglePrevisions={() => handleTogglePrev(layout.activeId!)}
@@ -354,6 +373,7 @@ export default function App() {
                 onImport={() => setModal({ kind: 'import', accId: layout.splitId! })}
                 onEdit={tx => setModal({ kind: 'edit', tx })}
                 onDelete={handleDeleteTx}
+                onTxContext={(x, y, tx) => setTxCtx({ x, y, tx })}
                 onConfirmForecast={handleConfirmForecast}
                 onSkipForecast={handleSkipForecast}
                 onTogglePrevisions={() => handleTogglePrev(layout.splitId!)}
@@ -481,6 +501,51 @@ export default function App() {
               { icon: <PenLine size={16} />, label: 'Modifier', fn: () => setModal({ kind: 'edit-member', member: m }) },
             ]}
             onClose={() => setMemberCtx(null)}
+          />
+        );
+      })()}
+
+      {/* Confirmation suppression tx avec pièce jointe */}
+      {modal?.kind === 'confirm-delete-tx' && (
+        <Modal title="Supprimer l'opération" onClose={() => setModal(null)}>
+          <div className="modal-body">
+            <p style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>
+              Cette opération a une <strong>pièce jointe</strong>. La supprimer effacera aussi le reçu associé.
+            </p>
+          </div>
+          <div className="modal-foot">
+            <button className="btn ghost" onClick={() => setModal(null)} disabled={deleteTx.isPending}>Annuler</button>
+            <button className="btn danger" disabled={deleteTx.isPending} onClick={() => handleDeleteTx(modal.tx)}>
+              {deleteTx.isPending ? <Loader2 size={15} className="spin" /> : <><Trash2 size={15} /> Supprimer quand même</>}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Context menu — transaction */}
+      {txCtx && (() => {
+        const t = txCtx.tx;
+        const cat = categories.find(c => c.id === t.categorieId);
+        const hue = cat?.hue ?? 250;
+        const isTransfer = t.type === 'transfer';
+        const sign = t.type === 'income' ? '+' : isTransfer ? '⇄' : '−';
+        const color = isTransfer ? 'var(--surface-3)' : `oklch(0.6 0.12 ${hue})`;
+        const subtitle = `${t.type === 'income' ? '+' : '−'}${fmtEur(t.montant)} · ${t.date.split('-').reverse().join('/')}`;
+        return (
+          <ContextMenu
+            ctx={txCtx}
+            header={{
+              title: t.libelle || cat?.nom || 'Opération',
+              subtitle,
+              color,
+              initiales: sign,
+            }}
+            actions={[
+              ...(!isTransfer ? [{ icon: <Copy size={16} />, label: 'Dupliquer', fn: () => handleDuplicateTx(t) }] : []),
+              { sep: true },
+              { icon: <Trash2 size={16} />, label: 'Supprimer', danger: true, fn: () => t.receiptPath ? setModal({ kind: 'confirm-delete-tx', tx: t }) : handleDeleteTx(t) },
+            ]}
+            onClose={() => setTxCtx(null)}
           />
         );
       })()}
