@@ -69,4 +69,5 @@ export const recurrences = sqliteTable('recurrences', {
   libelle: text('libelle').notNull().default(''),
   note: text('note').notNull().default(''),
   position: integer('position').notNull().default(0),
+  createdAt: text('created_at').notNull().default('2000-01-01'), // date de création — plancher pour le forecast
 });

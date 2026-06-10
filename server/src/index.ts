@@ -22,6 +22,8 @@ try { sqlite.exec('ALTER TABLE accounts ADD COLUMN banque TEXT'); } catch { /* d
 try { sqlite.exec('ALTER TABLE transactions ADD COLUMN recurrence_id TEXT'); } catch { /* déjà présente */ }
 try { sqlite.exec("ALTER TABLE recurrences ADD COLUMN note TEXT NOT NULL DEFAULT ''"); } catch { /* déjà présente */ }
 try { sqlite.exec('ALTER TABLE recurrences ADD COLUMN position INTEGER NOT NULL DEFAULT 0'); } catch { /* déjà présente */ }
+// created_at sur les récurrences — les lignes existantes gardent '2000-01-01' (pas de restriction rétroactive)
+try { sqlite.exec("ALTER TABLE recurrences ADD COLUMN created_at TEXT NOT NULL DEFAULT '2000-01-01'"); } catch { /* déjà présente */ }
 try { sqlite.exec('ALTER TABLE transactions ADD COLUMN import_id TEXT'); } catch { /* déjà présente */ }
 try { sqlite.exec("ALTER TABLE categories ADD COLUMN type TEXT NOT NULL DEFAULT 'expense'"); } catch { /* déjà présente */ }
 // Marquer les catégories d'entrées connues si elles existent encore

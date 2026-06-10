@@ -78,6 +78,7 @@ export function buildForecast(accountId: string, today: string): ForecastItem[] 
       const date = `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       if (date < cutoff) continue;
       if (date > today) continue;
+      if (date < r.createdAt) continue; // ne pas agir sur le passé avant la création
       items.push({ ...r, date, day });
     }
   }
@@ -103,6 +104,7 @@ export function buildForecast(accountId: string, today: string): ForecastItem[] 
       const day = Math.min(r.jourDuMois, lastDay);
       const date = `${TY}-${String(TM).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       if (date <= today) continue;
+      if (date < r.createdAt) continue;
       items.push({ ...r, date, day });
     }
   }

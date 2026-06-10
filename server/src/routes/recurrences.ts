@@ -32,7 +32,8 @@ router.post('/', (req, res) => {
     return;
   }
   const id = 'rec_' + randomUUID().slice(0, 8);
-  db.insert(recurrences).values({ id, accountId, montant: Number(montant), sens, categorieId: categorieId ?? null, jourDuMois: Number(jourDuMois), libelle: libelle ?? '', note: note ?? '' }).run();
+  const createdAt = new Date().toISOString().slice(0, 10);
+  db.insert(recurrences).values({ id, accountId, montant: Number(montant), sens, categorieId: categorieId ?? null, jourDuMois: Number(jourDuMois), libelle: libelle ?? '', note: note ?? '', createdAt }).run();
   res.status(201).json({ id });
 });
 
