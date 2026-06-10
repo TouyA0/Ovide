@@ -255,7 +255,7 @@ function TransactionList({ account, categories, onEdit, onDelete, onConfirmForec
     const s = q.trim().toLowerCase();
     if (s) result = result.filter(t => {
       const c = t.categorieId ? catMap[t.categorieId] : null;
-      return (t.libelle ?? '').toLowerCase().includes(s) || (c && c.nom.toLowerCase().includes(s));
+      return (t.libelle ?? '').toLowerCase().includes(s) || (t.note ?? '').toLowerCase().includes(s) || (c && c.nom.toLowerCase().includes(s));
     });
     if (typeFilter !== 'all') result = result.filter(t => t.type === typeFilter);
     if (catFilter !== 'all') result = result.filter(t => t.categorieId === catFilter);
