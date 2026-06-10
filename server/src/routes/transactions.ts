@@ -22,7 +22,7 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { accountId, type, montant, categorieId, libelle, date, note } = req.body;
+  const { accountId, type, montant, categorieId, libelle, date, note, recurrenceId } = req.body;
   if (!accountId || !type || !montant || !date) {
     res.status(400).json({ error: 'accountId, type, montant et date requis' });
     return;
@@ -41,6 +41,7 @@ router.post('/', (req, res) => {
     note: note ?? '',
     transferId: null,
     dir: null,
+    recurrenceId: recurrenceId ?? null,
   }).run();
   res.status(201).json({ id });
 });

@@ -91,6 +91,7 @@ export function useCreateTransaction() {
       qc.invalidateQueries({ queryKey: ['bars'] });
       qc.invalidateQueries({ queryKey: ['comparison'] });
       qc.invalidateQueries({ queryKey: ['donut'] });
+      qc.invalidateQueries({ queryKey: ['forecast'] });
     },
     onError,
   });
@@ -108,6 +109,7 @@ export function useUpdateTransaction() {
       qc.invalidateQueries({ queryKey: ['bars'] });
       qc.invalidateQueries({ queryKey: ['comparison'] });
       qc.invalidateQueries({ queryKey: ['donut'] });
+      qc.invalidateQueries({ queryKey: ['forecast'] });
     },
     onError,
   });
@@ -125,6 +127,7 @@ export function useDeleteTransaction() {
       qc.invalidateQueries({ queryKey: ['bars'] });
       qc.invalidateQueries({ queryKey: ['comparison'] });
       qc.invalidateQueries({ queryKey: ['donut'] });
+      qc.invalidateQueries({ queryKey: ['forecast'] });
     },
     onError,
   });
@@ -151,6 +154,7 @@ export function useTogglePrevisions() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['accounts'] });
       qc.invalidateQueries({ queryKey: ['forecast'] });
+      qc.invalidateQueries({ queryKey: ['balance-series'] });
     },
     onError,
   });

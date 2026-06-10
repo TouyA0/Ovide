@@ -1,6 +1,6 @@
 import { db } from '../db/client';
-import { recurrences, accounts } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { recurrences, accounts, transactions } from '../db/schema';
+import { eq, and, like, sql } from 'drizzle-orm';
 
 export interface ForecastItem {
   id: string;
@@ -19,6 +19,20 @@ export function buildForecast(accountId: string, today: string): ForecastItem[] 
 
   const [TY, TM, TD] = today.split('-').map(Number);
   const lastDay = new Date(TY, TM, 0).getDate();
+  const monthPrefix = `${TY}-${String(TM).padStart(2, '0')}`;
+
+  // IDs de récurrences déjà confirmées ce mois-ci (via recurrence_id)
+  const confirmedRecurrenceIds = new Set(
+    db.select({ recurrenceId: transactions.recurrenceId })
+      .from(transactions)
+      .where(and(
+        eq(transactions.accountId, accountId),
+        like(transactions.date, `${monthPrefix}%`),
+        sql`recurrence_id IS NOT NULL`,
+      ))
+      .all()
+      .map(r => r.recurrenceId as string),
+  );
 
   const recs = db.select().from(recurrences).where(eq(recurrences.accountId, accountId)).all();
 
@@ -29,5 +43,6 @@ export function buildForecast(accountId: string, today: string): ForecastItem[] 
       return { ...r, date, day };
     })
     .filter((r) => r.day >= TD)
+    .filter((r) => !confirmedRecurrenceIds.has(r.id))
     .sort((a, b) => a.day - b.day);
 }

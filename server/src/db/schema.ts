@@ -38,6 +38,7 @@ export const transactions = sqliteTable('transactions', {
   note: text('note').notNull().default(''),
   transferId: text('transfer_id'), // partagé entre les 2 écritures d'un virement
   dir: text('dir'), // 'in' | 'out' — pour les virements
+  recurrenceId: text('recurrence_id').references(() => recurrences.id),
   createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
 });
 

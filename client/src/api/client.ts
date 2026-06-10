@@ -103,6 +103,7 @@ export interface Transaction {
   note: string;
   transferId: string | null;
   dir: 'in' | 'out' | null;
+  recurrenceId: string | null;
 }
 
 export interface Recurrence {

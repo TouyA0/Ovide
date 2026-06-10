@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Plus, ArrowLeftRight, Eye, EyeOff, Download, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw, CalendarClock } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { BalanceChart } from '../charts/BalanceChart';
@@ -22,11 +22,12 @@ interface Props {
   onTransfer: () => void;
   onExport: () => void;
   onEdit: (tx: Transaction) => void;
+  onDelete: (tx: Transaction) => void;
   onConfirmForecast: (f: ForecastItem) => void;
   onTogglePrevisions: () => void;
 }
 
-export function AccountPane({ account, member, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onExport, onEdit, onConfirmForecast, onTogglePrevisions }: Props) {
+export function AccountPane({ account, member, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onExport, onEdit, onDelete, onConfirmForecast, onTogglePrevisions }: Props) {
   return (
     <div className={`pane m-active${isSplitTarget ? ' is-split-target' : ''}`} data-section={mobileSection}>
       <div className="pane-inner">
@@ -35,7 +36,7 @@ export function AccountPane({ account, member, categories, isSplitTarget, mobile
           <StatsSection account={account} member={member} categories={categories} />
         </div>
         <div className="m-section-tx">
-          <TransactionList account={account} categories={categories} onEdit={onEdit} onConfirmForecast={onConfirmForecast} />
+          <TransactionList account={account} categories={categories} onEdit={onEdit} onDelete={onDelete} onConfirmForecast={onConfirmForecast} />
           {account.type === 'courant' && (
             <RecurrencesSection account={account} categories={categories} />
           )}
@@ -197,9 +198,10 @@ function StatsSection({ account, member, categories }: { account: Account; membe
 /* ---- Transaction list ---- */
 const TX_PAGE = 20;
 
-function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
+function TransactionList({ account, categories, onEdit, onDelete, onConfirmForecast }: {
   account: Account; categories: Category[];
   onEdit: (tx: Transaction) => void;
+  onDelete: (tx: Transaction) => void;
   onConfirmForecast: (f: ForecastItem) => void;
 }) {
   const [q, setQ] = useState('');
@@ -207,10 +209,35 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
   const [catFilter, setCatFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState('all');
   const [limit, setLimit] = useState(TX_PAGE);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
+  const confirmingRef = useRef(false);
+
+  const handleConfirm = async (f: ForecastItem) => {
+    if (confirmingRef.current) return;
+    confirmingRef.current = true;
+    setConfirmingId(f.id);
+    setConfirmedIds(prev => new Set([...prev, f.id])); // retrait optimiste immédiat
+    try { await onConfirmForecast(f); } finally {
+      confirmingRef.current = false;
+      setConfirmingId(null);
+    }
+  };
 
   const txQuery = useTransactions(account.id);
   const forecastQuery = useForecast(account.id);
   const catMap = useMemo(() => Object.fromEntries(categories.map(c => [c.id, c])), [categories]);
+
+  // Si un item revient dans le forecast (ex: undo), on le retire de confirmedIds
+  useEffect(() => {
+    if (!forecastQuery.data) return;
+    const backIds = new Set(forecastQuery.data.map(f => f.id));
+    setConfirmedIds(prev => {
+      const next = new Set(prev);
+      for (const id of prev) if (backIds.has(id)) next.delete(id);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [forecastQuery.data]);
 
   const txs = txQuery.data ?? [];
   const forecast = forecastQuery.data ?? [];
@@ -249,11 +276,11 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
   // Forecasts filtered to match active type / category filters, hidden when browsing a past month
   const visibleForecast = useMemo(() => {
     if (monthFilter !== 'all' || typeFilter === 'transfer') return [];
-    let result = forecast;
+    let result = forecast.filter(f => !confirmedIds.has(f.id));
     if (typeFilter !== 'all') result = result.filter(f => f.sens === typeFilter);
     if (catFilter !== 'all') result = result.filter(f => f.categorieId === catFilter);
     return result;
-  }, [forecast, typeFilter, catFilter, monthFilter]);
+  }, [forecast, typeFilter, catFilter, monthFilter, confirmedIds]);
 
 
 
@@ -329,8 +356,8 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
                   <div className={`tx-amount ${f.sens === 'income' ? 'inc' : 'exp'}`} style={{ marginRight: 12 }}>
                     {f.sens === 'income' ? '+' : '−'}{fmtEurShort(f.montant)}
                   </div>
-                  <button className="btn-confirm" onClick={() => onConfirmForecast(f)}>
-                    <Check size={14} /> Confirmer
+                  <button className="btn-confirm" disabled={!!confirmingId} onClick={() => handleConfirm(f)}>
+                    <Check size={14} /> {confirmingId === f.id ? '…' : 'Confirmer'}
                   </button>
                 </div>
               );
@@ -381,7 +408,16 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
                     style={isTr ? { color: t.dir === 'in' ? 'var(--pos)' : 'var(--text-2)' } : {}}>
                     {t.type === 'income' ? '+' : t.type === 'expense' ? '−' : (t.dir === 'in' ? '+' : '−')}{fmtEur(t.montant)}
                   </span>
-                  <span className="tx-edit-hint"><LucideIcons.ChevronRight size={16} /></span>
+                  {t.recurrenceId && (
+                    <button
+                      className="tx-cancel-rec"
+                      title="Annuler — remet dans À venir"
+                      onClick={e => { e.stopPropagation(); onDelete(t); }}
+                    >
+                      <RefreshCw size={13} />
+                    </button>
+                  )}
+                  {!t.recurrenceId && <span className="tx-edit-hint"><LucideIcons.ChevronRight size={16} /></span>}
                 </button>
               );
             })}

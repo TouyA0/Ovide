@@ -112,8 +112,11 @@ export default function App() {
   };
 
   const handleConfirmForecast = async (f: ForecastItem) => {
-    await createTx.mutateAsync({ accountId: f.accountId, type: f.sens as 'income' | 'expense', montant: f.montant, categorieId: f.categorieId ?? undefined, libelle: f.libelle, date: f.date, note: '' });
-    pushToast(`${f.libelle} confirmé`);
+    const { id } = await createTx.mutateAsync({ accountId: f.accountId, type: f.sens as 'income' | 'expense', montant: f.montant, categorieId: f.categorieId ?? undefined, libelle: f.libelle, date: f.date, note: '', recurrenceId: f.id });
+    pushToast(`${f.libelle || 'Opération'} confirmée`, 'check-circle-2', {
+      label: 'Annuler',
+      fn: () => deleteTx.mutateAsync(id),
+    });
   };
 
   const handleTogglePrev = async (id: string) => {
@@ -303,6 +306,7 @@ export default function App() {
                 onTransfer={() => setModal({ kind: 'transfer', accId: layout.activeId! })}
                 onExport={() => handleExport(layout.activeId!)}
                 onEdit={tx => setModal({ kind: 'edit', tx })}
+                onDelete={handleDeleteTx}
                 onConfirmForecast={handleConfirmForecast}
                 onTogglePrevisions={() => handleTogglePrev(layout.activeId!)}
               />
@@ -317,6 +321,7 @@ export default function App() {
                 onTransfer={() => setModal({ kind: 'transfer', accId: layout.splitId! })}
                 onExport={() => handleExport(layout.splitId!)}
                 onEdit={tx => setModal({ kind: 'edit', tx })}
+                onDelete={handleDeleteTx}
                 onConfirmForecast={handleConfirmForecast}
                 onTogglePrevisions={() => handleTogglePrev(layout.splitId!)}
               />
