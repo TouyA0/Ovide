@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Minus, Plus, Trash2, Loader2 } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
 import { Modal } from './Modal';
+import { CategoryPicker } from '../ui/CategoryPicker';
 import type { Transaction, Category, Account, Member } from '../../api/client';
 
 interface Props {
@@ -15,8 +15,6 @@ interface Props {
   onDelete: (tx: Transaction) => void;
 }
 
-const INCOME_CATS = ['c_salaire', 'c_revenus', 'c_divers'];
-
 export function EditTransactionModal({ tx, categories, accounts: _accounts, members: _members, isPending, onClose, onSave, onDelete }: Props) {
   const isTransfer = tx.type === 'transfer';
   const [amount, setAmount] = useState(String(tx.montant).replace('.', ','));
@@ -27,7 +25,6 @@ export function EditTransactionModal({ tx, categories, accounts: _accounts, memb
   const [note, setNote] = useState(tx.note ?? '');
   const [confirmDel, setConfirmDel] = useState(false);
 
-  const shownCats = type === 'income' ? categories.filter(c => INCOME_CATS.includes(c.id)) : categories.filter(c => !['c_salaire', 'c_revenus'].includes(c.id));
   const parsed = parseFloat(amount.replace(',', '.'));
   const valid = parsed > 0;
 
@@ -51,26 +48,13 @@ export function EditTransactionModal({ tx, categories, accounts: _accounts, memb
         </div>
         {isTransfer && <p className="muted" style={{ textAlign: 'center', fontSize: 13, marginTop: -6 }}>Modifier le montant ajuste les deux écritures liées.</p>}
 
-        {!isTransfer && (
-          <>
-            <div className="field-label">Catégorie</div>
-            <div className="chip-grid">
-              {shownCats.map(c => {
-                const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
-                  c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
-                ];
-                return (
-                  <button key={c.id} className={`chip${catId === c.id ? ' on' : ''}`} onClick={() => setCatId(c.id)}>
-                    <span className="c-ic" style={{ background: catId === c.id ? `oklch(0.6 0.12 ${c.hue})` : `oklch(0.6 0.12 ${c.hue} / 0.14)`, color: catId === c.id ? '#fff' : `oklch(0.5 0.13 ${c.hue})` }}>
-                      {IconComp ? <IconComp size={14} /> : null}
-                    </span>
-                    <span className="chip-name">{c.nom}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
+        <div className="field-label">Catégorie</div>
+        <CategoryPicker
+          categories={categories}
+          selected={catId}
+          onChange={setCatId}
+          filter={isTransfer ? 'all' : type}
+        />
 
         <div className="field-label">Détails</div>
         <div className="field"><input className="input" placeholder="Libellé" value={libelle} onChange={e => setLibelle(e.target.value)} /></div>

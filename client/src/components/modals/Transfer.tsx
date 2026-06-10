@@ -1,23 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronDown, Loader2 } from 'lucide-react';
 import { Modal } from './Modal';
+import { CategoryPicker } from '../ui/CategoryPicker';
 import { today } from '../../utils/format';
-import type { Account, Member } from '../../api/client';
+import type { Account, Member, Category } from '../../api/client';
 
 interface Props {
   accounts: Account[];
   members: Member[];
+  categories: Category[];
   defaultFromId: string;
   isPending?: boolean;
   onClose: () => void;
-  onSave: (data: { fromId: string; toId: string; montant: number; date: string; libelle: string }) => void;
+  onSave: (data: { fromId: string; toId: string; montant: number; date: string; libelle: string; categorieId?: string | null }) => void;
 }
 
-export function TransferModal({ accounts, members, defaultFromId, isPending, onClose, onSave }: Props) {
+export function TransferModal({ accounts, members, categories, defaultFromId, isPending, onClose, onSave }: Props) {
   const fromId = defaultFromId || accounts[0]?.id;
   const otherAccounts = accounts.filter(a => a.id !== fromId);
   const [toId, setToId] = useState(otherAccounts[0]?.id ?? '');
   const [picking, setPicking] = useState(false);
+  const [catId, setCatId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today());
   const [libelle, setLibelle] = useState('');
@@ -49,7 +52,6 @@ export function TransferModal({ accounts, members, defaultFromId, isPending, onC
         </div>
 
         <div className="transfer-viz">
-          {/* DEPUIS — fixe */}
           <div className="tv-acct">
             <div className="tv-lbl">Depuis</div>
             <div className="tv-name">
@@ -61,7 +63,6 @@ export function TransferModal({ accounts, members, defaultFromId, isPending, onC
 
           <ArrowRight size={22} style={{ color: 'var(--accent)', flexShrink: 0 }} />
 
-          {/* VERS — cliquable */}
           <button className={`tv-acct tv-acct-select${picking ? ' is-open' : ''}`} onClick={() => setPicking(p => !p)}>
             <div className="tv-lbl">Vers <ChevronDown size={11} style={{ marginLeft: 3, opacity: 0.6, transition: 'transform .15s', transform: picking ? 'rotate(180deg)' : 'none' }} /></div>
             <div className="tv-name">
@@ -72,17 +73,13 @@ export function TransferModal({ accounts, members, defaultFromId, isPending, onC
           </button>
         </div>
 
-        {/* Picker inline */}
         {picking && (
           <div className="tv-picker">
             {otherAccounts.map(a => {
               const m = members.find(mm => mm.id === a.memberId);
               return (
-                <button
-                  key={a.id}
-                  className={`tv-option${a.id === toId ? ' on' : ''}`}
-                  onClick={() => { setToId(a.id); setPicking(false); }}
-                >
+                <button key={a.id} className={`tv-option${a.id === toId ? ' on' : ''}`}
+                  onClick={() => { setToId(a.id); setPicking(false); }}>
                   <i className="account-dot" style={{ background: `var(--m-${m?.couleur})`, width: 8, height: 8, flexShrink: 0 }} />
                   <span className="tv-option-name">{a.nom}</span>
                   <span className="tv-option-member">{m?.nom}</span>
@@ -92,7 +89,11 @@ export function TransferModal({ accounts, members, defaultFromId, isPending, onC
           </div>
         )}
 
-        <div className="row2" style={{ marginTop: 12 }}>
+        <div className="field-label" style={{ marginTop: 14 }}>Catégorie <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optionnelle)</span></div>
+        <CategoryPicker categories={categories} selected={catId} onChange={setCatId} filter="all" />
+
+        <div className="field-label" style={{ marginTop: 14 }}>Détails</div>
+        <div className="row2">
           <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} aria-label="Date" />
           <input className="input" placeholder="Libellé (optionnel)" value={libelle} onChange={e => setLibelle(e.target.value)} />
         </div>
@@ -101,7 +102,7 @@ export function TransferModal({ accounts, members, defaultFromId, isPending, onC
       <div className="modal-foot">
         <button className="btn ghost" onClick={onClose} disabled={!!isPending}>Annuler</button>
         <button className="btn primary" disabled={!valid || !!isPending}
-          onClick={() => valid && onSave({ fromId, toId, montant: Math.abs(parsed), date, libelle: libelle.trim() || 'Virement' })}>
+          onClick={() => valid && onSave({ fromId, toId, montant: Math.abs(parsed), date, libelle: libelle.trim() || 'Virement', categorieId: catId })}>
           {isPending ? <Loader2 size={15} className="spin" /> : <>Transférer {valid ? parsed.toFixed(2).replace('.', ',') + ' €' : ''}</>}
         </button>
       </div>

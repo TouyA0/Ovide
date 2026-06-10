@@ -336,7 +336,7 @@ export default function App() {
           onClose={() => setModal(null)} onSave={handleAddTx} />
       )}
       {modal?.kind === 'transfer' && (
-        <TransferModal accounts={accounts} members={members} defaultFromId={modal.accId}
+        <TransferModal accounts={accounts} members={members} categories={categories} defaultFromId={modal.accId}
           isPending={createTransfer.isPending}
           onClose={() => setModal(null)} onSave={handleTransfer} />
       )}

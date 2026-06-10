@@ -34,7 +34,7 @@ export const api = {
   deleteTransaction: (id: string) => request('/transactions/' + id, { method: 'DELETE' }),
 
   // Transfers
-  createTransfer: (data: { fromId: string; toId: string; montant: number; date: string; libelle?: string }) =>
+  createTransfer: (data: { fromId: string; toId: string; montant: number; date: string; libelle?: string; categorieId?: string | null }) =>
     request<{ transferId: string }>('/transfers', { method: 'POST', body: JSON.stringify(data) }),
 
   // Categories

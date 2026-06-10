@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Minus, Plus, Loader2 } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
 import { Modal } from './Modal';
+import { CategoryPicker } from '../ui/CategoryPicker';
 import { today } from '../../utils/format';
 import type { Account, Member, Category } from '../../api/client';
 
@@ -18,8 +18,6 @@ interface Props {
   }) => void;
 }
 
-const INCOME_CATS = ['c_salaire', 'c_revenus', 'c_divers'];
-
 export function AddTransactionModal({ accounts, members, categories, defaultAccountId, isPending, onClose, onSave }: Props) {
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
@@ -30,10 +28,6 @@ export function AddTransactionModal({ accounts, members, categories, defaultAcco
   const amountRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { const t = setTimeout(() => amountRef.current?.focus(), 80); return () => clearTimeout(t); }, []);
-
-  const shownCats = type === 'income'
-    ? categories.filter(c => INCOME_CATS.includes(c.id))
-    : categories.filter(c => !['c_salaire', 'c_revenus'].includes(c.id));
 
   const parsedAmount = parseFloat(amount.replace(',', '.'));
   const valid = parsedAmount > 0 && !!catId;
@@ -68,21 +62,7 @@ export function AddTransactionModal({ accounts, members, categories, defaultAcco
         </div>
 
         <div className="field-label">Catégorie</div>
-        <div className="chip-grid" id="cat-grid">
-          {shownCats.map(c => {
-            const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
-              c.icone.split('-').map((s, i) => i === 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s.charAt(0).toUpperCase() + s.slice(1)).join('')
-            ];
-            return (
-              <button key={c.id} className={`chip${catId === c.id ? ' on' : ''}`} onClick={() => setCatId(c.id)}>
-                <span className="c-ic" style={{ background: catId === c.id ? `oklch(0.6 0.12 ${c.hue})` : `oklch(0.6 0.12 ${c.hue} / 0.14)`, color: catId === c.id ? '#fff' : `oklch(0.5 0.13 ${c.hue})` }}>
-                  {IconComp ? <IconComp size={14} /> : null}
-                </span>
-                <span className="chip-name">{c.nom}</span>
-              </button>
-            );
-          })}
-        </div>
+        <CategoryPicker categories={categories} selected={catId} onChange={setCatId} filter={type} />
 
         <div className="field-label">Détails</div>
         <div className="field">
