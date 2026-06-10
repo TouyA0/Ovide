@@ -135,3 +135,27 @@ export function useCreateMember() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['members'] }),
   });
 }
+
+export function useCreateRecurrence() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: api.createRecurrence,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['recurrences'] }); qc.invalidateQueries({ queryKey: ['forecast'] }); },
+  });
+}
+
+export function useUpdateRecurrence() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof api.updateRecurrence>[1] }) => api.updateRecurrence(id, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['recurrences'] }); qc.invalidateQueries({ queryKey: ['forecast'] }); },
+  });
+}
+
+export function useDeleteRecurrence() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteRecurrence(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['recurrences'] }); qc.invalidateQueries({ queryKey: ['forecast'] }); },
+  });
+}

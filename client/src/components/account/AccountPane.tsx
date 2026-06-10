@@ -1,14 +1,16 @@
 import { useState, useMemo } from 'react';
-import { Plus, ArrowLeftRight, Eye, EyeOff, Download, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { Plus, ArrowLeftRight, Eye, EyeOff, Download, TrendingUp, TrendingDown, Search, X, Check, Wallet, ArrowDownLeft, ArrowUpRight, RefreshCw } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { BalanceChart } from '../charts/BalanceChart';
 import { IncomeExpenseBars } from '../charts/IncomeExpenseBars';
 import { CategoryDonut } from '../charts/CategoryDonut';
+import { RecurrenceFormModal } from '../modals/RecurrenceFormModal';
 import {
   useTransactions, useBalanceSeries, useBars, useComparison, useDonut, useForecast,
+  useRecurrences, useCreateRecurrence, useUpdateRecurrence, useDeleteRecurrence,
 } from '../../hooks/useData';
 import { fmtEur, fmtEurShort, fmtDateLong, fmtChange, pctDelta, relDay, MONTHS_FULL } from '../../utils/format';
-import type { Account, Member, Category, Transaction, ForecastItem } from '../../api/client';
+import type { Account, Member, Category, Transaction, ForecastItem, Recurrence } from '../../api/client';
 
 interface Props {
   account: Account;
@@ -30,6 +32,9 @@ export function AccountPane({ account, member, categories, isSplitTarget, onAdd,
         <BalanceHeader account={account} member={member} onAdd={onAdd} onTransfer={onTransfer} onExport={onExport} onTogglePrevisions={onTogglePrevisions} />
         <StatsSection account={account} member={member} categories={categories} />
         <TransactionList account={account} categories={categories} onEdit={onEdit} onConfirmForecast={onConfirmForecast} />
+        {account.type === 'courant' && (
+          <RecurrencesSection account={account} categories={categories} />
+        )}
       </div>
     </div>
   );
@@ -301,6 +306,95 @@ function TransactionList({ account, categories, onEdit, onConfirmForecast }: {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ---- Recurrences section ---- */
+function RecurrencesSection({ account, categories }: { account: Account; categories: Category[] }) {
+  const [modal, setModal] = useState<'create' | Recurrence | null>(null);
+  const recQ = useRecurrences(account.id);
+  const createRec = useCreateRecurrence();
+  const updateRec = useUpdateRecurrence();
+  const deleteRec = useDeleteRecurrence();
+
+  const recs = recQ.data ?? [];
+  const catMap = useMemo(() => Object.fromEntries(categories.map(c => [c.id, c])), [categories]);
+
+  const handleCreate = async (data: Omit<Recurrence, 'id'>) => {
+    await createRec.mutateAsync(data);
+    setModal(null);
+  };
+
+  const handleUpdate = async (id: string, data: Omit<Recurrence, 'id'>) => {
+    await updateRec.mutateAsync({ id, data });
+    setModal(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteRec.mutateAsync(id);
+    setModal(null);
+  };
+
+  return (
+    <div className="tx-section" style={{ marginTop: 8 }}>
+      <div className="tx-toolbar">
+        <RefreshCw size={15} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+        <h2>Récurrences</h2>
+        <span className="count">{recs.length}</span>
+        <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => setModal('create')}>
+          <Plus size={14} /> Ajouter
+        </button>
+      </div>
+
+      {recs.length === 0 ? (
+        <div className="empty">
+          <div className="e-ic"><RefreshCw size={20} style={{ color: 'var(--text-3)' }} /></div>
+          Aucune récurrence — ajoutez vos revenus et dépenses fixes.
+        </div>
+      ) : (
+        <div className="tx-list">
+          {recs.map(r => {
+            const c = r.categorieId ? catMap[r.categorieId] : null;
+            const hue = c?.hue ?? 250;
+            const IconComp = c
+              ? (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
+                  c.icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
+                ]
+              : null;
+            return (
+              <button key={r.id} className="tx-row" onClick={() => setModal(r)}>
+                <span className="tx-ico" style={{ background: `oklch(0.6 0.12 ${hue} / 0.13)`, color: `oklch(0.5 0.13 ${hue})` }}>
+                  {IconComp ? <IconComp size={17} /> : <RefreshCw size={17} />}
+                </span>
+                <div className="tx-body">
+                  <div className="tx-label">{r.libelle || c?.nom || 'Récurrence'}</div>
+                  <div className="tx-meta">
+                    <i className="cat-dot" style={{ background: `oklch(0.6 0.12 ${hue})` }} />
+                    <span>{c?.nom ?? 'Divers'} · le {r.jourDuMois} du mois</span>
+                  </div>
+                </div>
+                <span className={`tx-amount ${r.sens === 'income' ? 'inc' : 'exp'}`}>
+                  {r.sens === 'income' ? '+' : '−'}{fmtEur(r.montant)}
+                </span>
+                <span className="tx-edit-hint"><LucideIcons.ChevronRight size={16} /></span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {modal !== null && (
+        <RecurrenceFormModal
+          recurrence={modal === 'create' ? undefined : modal}
+          accountId={account.id}
+          categories={categories}
+          onClose={() => setModal(null)}
+          onCreate={handleCreate}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+        />
+      )}
     </div>
   );
 }
