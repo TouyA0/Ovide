@@ -120,23 +120,12 @@ function parseBNP(buffer: Buffer): ParsedRow[] {
   const headerIdx = raw.findIndex(r =>
     Array.isArray(r) && r.some(c => typeof c === 'string' && c.toLowerCase().includes('date op'))
   );
-  if (headerIdx === -1) {
-    // Log les 5 premières lignes pour debugger
-    console.log('[BNP] Header non trouvé. Premières lignes:');
-    raw.slice(0, 5).forEach((r, i) => console.log(`  [${i}]`, JSON.stringify(r)));
-    throw new Error('Format BNP non reconnu');
-  }
+  if (headerIdx === -1) throw new Error('Format BNP non reconnu');
 
   const header = (raw[headerIdx] as unknown[]).map(h => String(h ?? '').toLowerCase().trim());
-  console.log('[BNP] Header trouvé ligne', headerIdx, ':', header);
   const iDate = header.findIndex(h => h.includes('date op'));
   const iLib = header.findIndex(h => h.includes('libell'));
   const iMontant = header.findIndex(h => h.includes('montant'));
-  console.log('[BNP] Colonnes → date:', iDate, 'lib:', iLib, 'montant:', iMontant);
-
-  // Log la première ligne de données pour vérifier les types
-  const firstRow = raw[headerIdx + 1] as unknown[];
-  if (firstRow) console.log('[BNP] Première ligne data:', JSON.stringify(firstRow?.map(v => ({ type: typeof v, val: v instanceof Date ? v.toISOString() : v }))));
 
   const result: ParsedRow[] = [];
   for (const row of raw.slice(headerIdx + 1) as unknown[][]) {

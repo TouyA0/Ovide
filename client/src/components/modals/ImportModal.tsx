@@ -27,10 +27,8 @@ export function ImportModal({ accountId: _accountId, accountName, isPending, onC
     setError(null);
     setLoading(true);
     setParsed(null);
-    console.log('[Import] handleFile:', file.name, file.size, 'bytes');
     try {
       const result = await parseFile(file);
-      console.log('[Import] parsed ok:', result.bank, result.rows.length, 'rows');
       if (result.rows.length === 0) {
         setError('Aucune opération trouvée dans ce fichier. Vérifiez le format.');
         return;
@@ -38,7 +36,6 @@ export function ImportModal({ accountId: _accountId, accountName, isPending, onC
       setParsed(result);
       setFilename(file.name);
     } catch (e) {
-      console.error('[Import] error:', e);
       setError(e instanceof Error ? e.message : 'Erreur de lecture du fichier');
     } finally {
       setLoading(false);
