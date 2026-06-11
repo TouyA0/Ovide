@@ -85,6 +85,17 @@ export default function App() {
     }
   }, [accounts, tabsLength, initTabs]);
 
+  // Desactive le clic droit par defaut, sauf sur les zones avec menu contextuel custom
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-ctx-menu]')) return;
+      e.preventDefault();
+    };
+    document.addEventListener('contextmenu', handler);
+    return () => document.removeEventListener('contextmenu', handler);
+  }, []);
+
   // Mutations
   const createTx = useCreateTransaction();
   const updateTx = useUpdateTransaction();

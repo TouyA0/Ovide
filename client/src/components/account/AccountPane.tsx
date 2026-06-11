@@ -563,7 +563,7 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
               ] : null;
               const [, txM, txD] = t.date.split('-').map(Number);
               return (
-                <button className={`tx-row${t.id === flashId ? ' tx-flash' : ''}`} key={t.id} onClick={() => onEdit(t)} onContextMenu={e => { e.preventDefault(); onTxContext(e.clientX, e.clientY, t); }}>
+                <button className={`tx-row${t.id === flashId ? ' tx-flash' : ''}`} key={t.id} data-ctx-menu onClick={() => onEdit(t)} onContextMenu={e => { e.preventDefault(); onTxContext(e.clientX, e.clientY, t); }}>
                   {/* Date stamp — visible uniquement sur la 1re ligne du groupe */}
                   <span className={`tx-stamp${ti > 0 ? ' blank' : ''}`}>
                     <span className="tx-stamp-d">{txD}</span>

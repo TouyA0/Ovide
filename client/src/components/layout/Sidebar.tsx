@@ -43,6 +43,7 @@ export function Sidebar({ members, accounts, activeId, onOpen, onOpenDashboard, 
             <div className="member-group" key={m.id}>
               <button
                 className="member-head"
+                data-ctx-menu
                 onClick={() => setOpen(o => ({ ...o, [m.id]: !o[m.id] }))}
                 onContextMenu={e => { e.preventDefault(); onMemberContext(e.clientX, e.clientY, m); }}
               >
@@ -55,6 +56,7 @@ export function Sidebar({ members, accounts, activeId, onOpen, onOpenDashboard, 
                 <div className="account-list">
                   {accs.map(a => (
                     <button key={a.id} className={`account-item${a.id === activeId ? ' active' : ''}${a.balance < 0 ? ' neg' : ''}`}
+                      data-ctx-menu
                       onClick={() => onOpen(a.id)}
                       onContextMenu={e => { e.preventDefault(); onContext(e.clientX, e.clientY, a.id); }}>
                       <i className="account-dot" style={{ background: a.type === 'epargne' ? 'oklch(0.6 0.02 70)' : `var(--m-${m.couleur})` }} />
@@ -83,6 +85,7 @@ export function Sidebar({ members, accounts, activeId, onOpen, onOpenDashboard, 
                       </button>
                       {archivedOpen && archived.map(a => (
                         <button key={a.id} className="account-item"
+                          data-ctx-menu
                           style={{ opacity: 0.5, paddingLeft: 28, cursor: 'context-menu' }}
                           onContextMenu={e => { e.preventDefault(); onContext(e.clientX, e.clientY, a.id); }}>
                           <i className="account-dot" style={{ background: 'var(--line-strong)' }} />
