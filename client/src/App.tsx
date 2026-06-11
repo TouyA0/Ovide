@@ -18,6 +18,7 @@ import { ImportModal } from './components/modals/ImportModal';
 import { AccountEditModal } from './components/modals/AccountEditModal';
 import { MemberFormModal } from './components/modals/MemberForm';
 import { CategoriesModal } from './components/modals/CategoriesModal';
+import { ExportModal } from './components/modals/ExportModal';
 import { Modal } from './components/modals/Modal';
 import { Toasts, useToastStore } from './components/ui/Toast';
 import { useLayout } from './store/useLayout';
@@ -43,6 +44,7 @@ type ModalState =
   | { kind: 'edit-member'; member: Member }
   | { kind: 'categories' }
   | { kind: 'import'; accId: string }
+  | { kind: 'export'; accId: string }
   | { kind: 'confirm-delete-tx'; tx: Transaction }
   | { kind: 'delete-account'; accId: string }
   | null;
@@ -278,7 +280,7 @@ export default function App() {
         { icon: <Columns2 size={16} />, label: 'Ouvrir dans la vue scindée', fn: () => layout.openInSplit(accId) },
         { sep: true },
       ] : []),
-      { icon: <Download size={16} />, label: 'Exporter en CSV', fn: () => handleExport(accId) },
+      { icon: <Download size={16} />, label: 'Exporter', fn: () => setModal({ kind: 'export' as const, accId }) },
       ...(!isArchived ? [
         { icon: <PenLine size={16} />, label: 'Renommer', fn: () => setModal({ kind: 'edit-account' as const, accId }) },
       ] : []),
@@ -449,6 +451,21 @@ export default function App() {
           onImport={handleImport}
         />
       )}
+      {modal?.kind === 'export' && (() => {
+        const acc = accounts.find(a => a.id === modal.accId);
+        const member = members.find(m => m.id === acc?.memberId);
+        if (!acc || !member) return null;
+        return (
+          <ExportModal
+            account={acc}
+            member={member}
+            categories={categories}
+            onClose={() => setModal(null)}
+            onExportCsv={() => handleExport(modal.accId)}
+            onDone={(msg) => pushToast(msg, 'download')}
+          />
+        );
+      })()}
       {modal?.kind === 'edit' && (
         <EditTransactionModal tx={modal.tx} categories={categories} accounts={accounts} members={members}
           isPending={updateTx.isPending || deleteTx.isPending}

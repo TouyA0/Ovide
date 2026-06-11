@@ -577,7 +577,16 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .type-opt .t-ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; }
 .type-opt.on.exp { border-color: var(--neg); background: var(--neg-soft); color: var(--neg); }
 .type-opt.on.inc { border-color: var(--pos); background: var(--pos-soft); color: var(--pos); }
+.type-opt.on:not(.exp):not(.inc) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
 .type-opt:not(.on):hover { border-color: var(--line-strong); }
+
+.export-period-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.export-period-chip {
+  padding: 8px 13px; border-radius: var(--r-sm, 8px); border: 1.5px solid var(--line); background: var(--surface);
+  font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: capitalize;
+}
+.export-period-chip:hover { border-color: var(--line-strong); }
+.export-period-chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
 
 .amount-field { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 0 18px; }
 .amount-field .cur { font-size: 30px; font-weight: 700; color: var(--text-3); }

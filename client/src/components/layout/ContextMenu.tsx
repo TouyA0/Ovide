@@ -23,7 +23,7 @@ export function ContextMenu({ ctx, header, actions, onClose }: Props) {
     return () => window.removeEventListener('keydown', h);
   }, [onClose]);
 
-  const W = 224, H = 320;
+  const W = 224, H = 360;
   const left = Math.min(ctx.x, window.innerWidth - W - 8);
   const top  = Math.min(ctx.y, window.innerHeight - H - 8);
 
