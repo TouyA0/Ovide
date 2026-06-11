@@ -5,6 +5,8 @@ export const members = sqliteTable('members', {
   nom: text('nom').notNull(),
   couleur: text('couleur').notNull(), // 'q' | 'a' | 'c' | hex oklch hue string
   initiales: text('initiales').notNull(),
+  avatarIcon: text('avatar_icon'), // nom d'icône Lucide (optionnel)
+  avatarPhoto: text('avatar_photo'), // nom du fichier dans uploads/avatars/ (optionnel)
   createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
 });
 

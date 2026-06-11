@@ -18,6 +18,14 @@ export const api = {
   createMember: (data: Partial<Member>) => request<{ id: string }>('/members', { method: 'POST', body: JSON.stringify(data) }),
   updateMember: (id: string, data: Partial<Member>) => request('/members/' + id, { method: 'PUT', body: JSON.stringify(data) }),
   deleteMember: (id: string) => request('/members/' + id, { method: 'DELETE' }),
+  uploadMemberAvatar: async (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE}/members/${id}/avatar`, { method: 'POST', body: formData });
+    if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error((b as { error?: string }).error ?? `HTTP ${res.status}`); }
+    return res.json() as Promise<{ avatarPhoto: string }>;
+  },
+  deleteMemberAvatar: (id: string) => request('/members/' + id + '/avatar', { method: 'DELETE' }),
 
   // Accounts
   getAccounts: () => request<Account[]>('/accounts'),
@@ -95,6 +103,8 @@ export interface Member {
   nom: string;
   couleur: string;
   initiales: string;
+  avatarIcon?: string | null;
+  avatarPhoto?: string | null;
 }
 
 export interface Account {

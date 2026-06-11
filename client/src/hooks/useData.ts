@@ -246,6 +246,26 @@ export function useUpdateMember() {
   });
 }
 
+export function useUploadMemberAvatar() {
+  const qc = useQueryClient();
+  const onError = useOnError();
+  return useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => api.uploadMemberAvatar(id, file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['members'] }),
+    onError,
+  });
+}
+
+export function useDeleteMemberAvatar() {
+  const qc = useQueryClient();
+  const onError = useOnError();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteMemberAvatar(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['members'] }),
+    onError,
+  });
+}
+
 export function useDeleteMember() {
   const qc = useQueryClient();
   const onError = useOnError();

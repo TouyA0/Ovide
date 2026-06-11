@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Avatar } from '../ui/Avatar';
 
 export interface Action { icon?: React.ReactNode; label?: string; fn?: () => void; danger?: boolean; sep?: boolean; }
 
@@ -7,6 +8,9 @@ interface Header {
   subtitle?: string;
   color: string;    // valeur CSS : 'var(--m-q)' ou oklch(…)
   initiales: string;
+  avatarIcon?: string | null;
+  avatarPhoto?: string | null;
+  avatarCouleur?: string;
 }
 
 interface Props {
@@ -32,9 +36,13 @@ export function ContextMenu({ ctx, header, actions, onClose }: Props) {
       <div className="ctx-overlay" onMouseDown={onClose} onContextMenu={e => { e.preventDefault(); onClose(); }} />
       <div className="ctx" style={{ left, top }} role="menu">
         <div className="ctx-head">
-          <span className="avatar" style={{ background: header.color, width: 20, height: 20, fontSize: 9 }}>
-            {header.initiales}
-          </span>
+          {header.avatarCouleur ? (
+            <Avatar member={{ couleur: header.avatarCouleur, initiales: header.initiales, avatarIcon: header.avatarIcon, avatarPhoto: header.avatarPhoto }} size={20} />
+          ) : (
+            <span className="avatar" style={{ background: header.color, width: 20, height: 20, fontSize: 9 }}>
+              {header.initiales}
+            </span>
+          )}
           <div style={{ minWidth: 0 }}>
             <div className="nm">{header.title}</div>
             {header.subtitle && <div className="mb">{header.subtitle}</div>}

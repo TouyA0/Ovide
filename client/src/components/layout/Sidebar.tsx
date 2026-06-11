@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { WalletMinimal, ChevronRight, UserPlus, ArchiveX, Tags } from 'lucide-react';
 import { fmtEurShort } from '../../utils/format';
+import { Avatar } from '../ui/Avatar';
 import type { Member, Account } from '../../api/client';
 
 interface Props {
@@ -47,7 +48,7 @@ export function Sidebar({ members, accounts, activeId, onOpen, onOpenDashboard, 
                 onClick={() => setOpen(o => ({ ...o, [m.id]: !o[m.id] }))}
                 onContextMenu={e => { e.preventDefault(); onMemberContext(e.clientX, e.clientY, m); }}
               >
-                <span className="avatar" style={{ background: `var(--m-${m.couleur})` }}>{m.initiales}</span>
+                <Avatar member={m} />
                 <span style={{ flex: 1, textAlign: 'left' }}>{m.nom}</span>
                 <span className="member-total tnum">{fmtEurShort(total)}</span>
                 <span className={`chev${open[m.id] ? ' open' : ''}`}><ChevronRight size={15} /></span>

@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, Wallet, ArrowDownLeft, ArrowUpRight } from 'l
 import { IncomeExpenseBars } from '../charts/IncomeExpenseBars';
 import { useGlobalStats } from '../../hooks/useData';
 import { fmtEur, fmtChange, pctDelta } from '../../utils/format';
+import { Avatar } from '../ui/Avatar';
 import type { Account, Member } from '../../api/client';
 
 interface Props {
@@ -73,7 +74,7 @@ export function DashboardPane({ members, accounts, onOpenAccount }: Props) {
                 <div key={m.id} className="cmp" style={{ gap: 0 }}>
                   {/* Header membre */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <span className="avatar" style={{ background: `var(--m-${m.couleur})`, width: 22, height: 22, fontSize: 9, flexShrink: 0 }}>{m.initiales}</span>
+                    <Avatar member={m} style={{ flexShrink: 0 }} />
                     <span style={{ fontWeight: 700, fontSize: 13.5, flex: 1 }}>{m.nom}</span>
                     <span style={{ fontSize: 11.5, color: 'var(--text-3)', fontWeight: 600 }}>{pct}%</span>
                   </div>

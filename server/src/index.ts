@@ -127,10 +127,16 @@ try { sqlite.exec(`CREATE TABLE IF NOT EXISTS recurrence_skips (
   month_prefix TEXT NOT NULL
 )`); } catch { /* déjà présente */ }
 try { sqlite.exec('ALTER TABLE transactions ADD COLUMN receipt_path TEXT'); } catch { /* déjà présente */ }
+try { sqlite.exec('ALTER TABLE members ADD COLUMN avatar_icon TEXT'); } catch { /* déjà présente */ }
+try { sqlite.exec('ALTER TABLE members ADD COLUMN avatar_photo TEXT'); } catch { /* déjà présente */ }
 
 // Répertoire de stockage des pièces jointes
 export const uploadsDir = path.join(__dirname, '..', '..', 'uploads', 'receipts');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+// Répertoire de stockage des avatars
+export const avatarsDir = path.join(__dirname, '..', '..', 'uploads', 'avatars');
+if (!fs.existsSync(avatarsDir)) fs.mkdirSync(avatarsDir, { recursive: true });
 
 app.use(express.json());
 
@@ -153,6 +159,14 @@ app.use('/api/export', exportRouter);
 app.get('/api/receipts/:filename', (req, res) => {
   const filename = path.basename(req.params.filename); // protection path traversal
   const filePath = path.join(uploadsDir, filename);
+  if (!fs.existsSync(filePath)) { res.status(404).json({ error: 'Fichier introuvable' }); return; }
+  res.sendFile(filePath);
+});
+
+// Sert les photos de profil des membres (derrière le middleware d'auth)
+app.get('/api/avatars/:filename', (req, res) => {
+  const filename = path.basename(req.params.filename); // protection path traversal
+  const filePath = path.join(avatarsDir, filename);
   if (!fs.existsSync(filePath)) { res.status(404).json({ error: 'Fichier introuvable' }); return; }
   res.sendFile(filePath);
 });

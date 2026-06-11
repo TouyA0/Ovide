@@ -26,7 +26,7 @@ import {
   useMembers, useAccounts, useCategories,
   useCreateTransaction, useUpdateTransaction, useDeleteTransaction,
   useCreateTransfer, useTogglePrevisions, useCreateAccount, useUpdateAccount, useCreateImport,
-  useArchiveAccount, useCreateMember, useUpdateMember, useDeleteMember,
+  useArchiveAccount, useCreateMember, useUpdateMember, useDeleteMember, useUploadMemberAvatar,
   useCreateCategory, useUpdateCategory, useDeleteCategory, useReorderCategories,
   useSkipRecurrence, useUnskipRecurrence, useDeleteAccount,
 } from './hooks/useData';
@@ -157,6 +157,7 @@ export default function App() {
   const createMember = useCreateMember();
   const updateMember = useUpdateMember();
   const deleteMember = useDeleteMember();
+  const uploadMemberAvatar = useUploadMemberAvatar();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
@@ -288,8 +289,9 @@ export default function App() {
     setModal(null);
   };
 
-  const handleCreateMember = async (data: Parameters<typeof createMember.mutateAsync>[0]) => {
-    await createMember.mutateAsync(data);
+  const handleCreateMember = async (data: Parameters<typeof createMember.mutateAsync>[0], photoFile?: File | null) => {
+    const created = await createMember.mutateAsync(data);
+    if (photoFile) await uploadMemberAvatar.mutateAsync({ id: created.id, file: photoFile });
     pushToast('Membre ajouté');
     setModal(null);
   };
@@ -652,6 +654,9 @@ export default function App() {
               subtitle: m.nom + (a.banque ? ` · ${a.banque}` : ''),
               color: `var(--m-${m.couleur})`,
               initiales: m.initiales,
+              avatarCouleur: m.couleur,
+              avatarIcon: m.avatarIcon,
+              avatarPhoto: m.avatarPhoto,
             }}
             actions={ctxActions(ctx.accId)}
             onClose={() => setCtx(null)}
@@ -672,6 +677,9 @@ export default function App() {
               subtitle: m.nom + (a.banque ? ` · ${a.banque}` : ''),
               color: `var(--m-${m.couleur})`,
               initiales: m.initiales,
+              avatarCouleur: m.couleur,
+              avatarIcon: m.avatarIcon,
+              avatarPhoto: m.avatarPhoto,
             }}
             actions={[
               { icon: <Columns2 size={16} />, label: 'Ouvrir dans la vue scindée', fn: () => layout.setSplit(tabCtx.accId) },
@@ -695,6 +703,9 @@ export default function App() {
               subtitle: `${totalAcc} compte${totalAcc > 1 ? 's' : ''}`,
               color: `var(--m-${m.couleur})`,
               initiales: m.initiales,
+              avatarCouleur: m.couleur,
+              avatarIcon: m.avatarIcon,
+              avatarPhoto: m.avatarPhoto,
             }}
             actions={[
               { icon: <PenLine size={16} />, label: 'Modifier', fn: () => setModal({ kind: 'edit-member', member: m }) },

@@ -179,7 +179,9 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   width: 22px; height: 22px; border-radius: 50%;
   display: grid; place-items: center; flex: 0 0 auto;
   font-size: 10px; font-weight: 800; color: #fff;
+  overflow: hidden;
 }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
 .member-head .chev { margin-left: auto; color: var(--text-3); transition: transform .18s ease; }
 .member-head .chev.open { transform: rotate(90deg); }
 .member-total { font-size: 12px; color: var(--text-3); font-weight: 600; }
@@ -608,6 +610,9 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .export-period-chip:hover { border-color: var(--line-strong); }
 .export-period-chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
 
+.avatar-mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.avatar-mode-grid .export-period-chip { display: flex; align-items: center; justify-content: center; gap: 6px; }
+
 .amount-field { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 0 18px; }
 .amount-field .cur { font-size: 30px; font-weight: 700; color: var(--text-3); }
 .amount-input {
@@ -722,6 +727,11 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .tv-cat-chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); }
 .tv-cat-chip.on .tv-cat-ic { background: var(--accent); color: var(--surface); }
+.tv-cat-chip.special { background: var(--surface-2); }
+.tv-cat-chip.special .tv-cat-ic { background: var(--surface-3); color: var(--text-2); overflow: hidden; }
+.tv-cat-chip.special .tv-cat-ic img { width: 100%; height: 100%; object-fit: cover; border-radius: 7px; }
+.tv-cat-chip.special.on { background: var(--accent-soft); }
+.tv-cat-chip.special.on .tv-cat-ic { background: var(--accent); color: var(--surface); }
 
 /* Toast */
 .toast-wrap { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
