@@ -20,6 +20,7 @@ interface Props {
   members: Member[];
   categories: Category[];
   isSplitTarget?: boolean;
+  splitToolbar?: React.ReactNode;
   mobileSection?: 'transactions' | 'stats';
   onAdd: () => void;
   onTransfer: () => void;
@@ -32,10 +33,11 @@ interface Props {
   onTogglePrevisions: () => void;
 }
 
-export function AccountPane({ account, member, accounts, members, categories, isSplitTarget, mobileSection = 'transactions', onAdd, onTransfer, onImport, onEdit, onDelete, onTxContext, onConfirmForecast, onSkipForecast, onTogglePrevisions }: Props) {
+export function AccountPane({ account, member, accounts, members, categories, isSplitTarget, splitToolbar, mobileSection = 'transactions', onAdd, onTransfer, onImport, onEdit, onDelete, onTxContext, onConfirmForecast, onSkipForecast, onTogglePrevisions }: Props) {
   return (
     <div className={`pane m-active${isSplitTarget ? ' is-split-target' : ''}`} data-section={mobileSection}>
       <div className="pane-inner">
+        {splitToolbar}
         <BalanceHeader account={account} member={member} onAdd={onAdd} onTransfer={onTransfer} onImport={onImport} onTogglePrevisions={onTogglePrevisions} />
         <div className="m-section-stats">
           <StatsSection account={account} member={member} categories={categories} />

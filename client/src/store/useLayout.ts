@@ -9,11 +9,12 @@ interface LayoutState {
 
   openTab: (id: string) => void;
   openInNewTab: (id: string) => void;
-  openInSplit: (id: string) => void;
   closeTab: (id: string) => void;
   setActive: (id: string) => void;
   openDashboard: () => void;
   toggleSplit: (fallbackId?: string) => void;
+  setSplit: (id: string) => void;
+  closeSplit: () => void;
   toggleTheme: () => void;
   initTabs: (ids: string[]) => void;
 }
@@ -45,16 +46,6 @@ export const useLayout = create<LayoutState>((set, get) => ({
     set({ tabs: [...tabs, id], activeId: id });
   },
 
-  openInSplit: (id) => {
-    const { activeId } = get();
-    set({ splitId: id, splitOn: true });
-    if (id === activeId) {
-      const { tabs } = get();
-      const other = tabs.find(x => x !== id);
-      if (other) set({ activeId: other });
-    }
-  },
-
   closeTab: (id) => {
     const { tabs, activeId } = get();
     const next = tabs.filter(x => x !== id);
@@ -66,14 +57,26 @@ export const useLayout = create<LayoutState>((set, get) => ({
   openDashboard: () => set({ activeId: null }),
 
   toggleSplit: (fallbackId) => {
-    const { splitOn, tabs, activeId } = get();
+    const { splitOn, tabs, activeId, splitId } = get();
     if (!splitOn) {
-      const other = fallbackId ?? tabs.find(x => x !== activeId);
+      const other = splitId ?? fallbackId ?? tabs.find(x => x !== activeId);
       set({ splitOn: true, splitId: other ?? null });
     } else {
       set({ splitOn: false });
     }
   },
+
+  setSplit: (id) => {
+    const { activeId } = get();
+    set({ splitId: id, splitOn: true });
+    if (id === activeId) {
+      const { tabs } = get();
+      const other = tabs.find(x => x !== id);
+      if (other) set({ activeId: other });
+    }
+  },
+
+  closeSplit: () => set({ splitOn: false }),
 
   toggleTheme: () => {
     const next = get().theme === 'dark' ? 'light' : 'dark';

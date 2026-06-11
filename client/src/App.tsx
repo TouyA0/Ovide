@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   Plus, MousePointer2, PenLine, Columns2, Download, Archive, Loader2,
   Sun, Moon, WalletMinimal, Tags, Receipt, BarChart2, Settings,
-  Copy, Trash2,
+  Copy, Trash2, X,
 } from 'lucide-react';
 import { fmtEur } from './utils/format';
 import { Sidebar } from './components/layout/Sidebar';
@@ -65,6 +65,7 @@ export default function App() {
   const pushToast = useToastStore(s => s.push);
   const [modal, setModal] = useState<ModalState>(null);
   const [ctx, setCtx] = useState<CtxState>(null);
+  const [tabCtx, setTabCtx] = useState<CtxState>(null);
   const [memberCtx, setMemberCtx] = useState<MemberCtxState>(null);
   const [txCtx, setTxCtx] = useState<TxCtxState>(null);
   const [mobileSection, setMobileSection] = useState<'transactions' | 'stats'>('transactions');
@@ -314,7 +315,7 @@ export default function App() {
       ...(!isArchived ? [
         { icon: <MousePointer2 size={16} />, label: 'Ouvrir', fn: () => layout.openTab(accId) },
         { icon: <Plus size={16} />, label: 'Ouvrir dans un nouvel onglet', fn: () => layout.openInNewTab(accId) },
-        { icon: <Columns2 size={16} />, label: 'Ouvrir dans la vue scindée', fn: () => layout.openInSplit(accId) },
+        { icon: <Columns2 size={16} />, label: 'Ouvrir dans la vue scindée', fn: () => layout.setSplit(accId) },
         { sep: true },
       ] : []),
       { icon: <Download size={16} />, label: 'Exporter', fn: () => setModal({ kind: 'export' as const, accId }) },
@@ -403,7 +404,9 @@ export default function App() {
       <TabBar
         tabs={layout.tabs} accounts={accounts} members={members} activeId={layout.activeId}
         splitOn={layout.splitOn} theme={layout.theme}
-        onSelect={layout.setActive} onClose={layout.closeTab} onNewTab={newTab}
+        onSelect={layout.setActive} onClose={layout.closeTab}
+        onTabContext={(x, y, accId) => setTabCtx({ x, y, accId })}
+        onNewTab={newTab}
         onToggleSplit={() => layout.toggleSplit(accounts.find(a => a.id !== layout.activeId)?.id)}
         onToggleTheme={layout.toggleTheme}
         canInstall={!!installPrompt}
@@ -447,24 +450,73 @@ export default function App() {
                 onTogglePrevisions={() => handleTogglePrev(layout.activeId!)}
               />
             )}
-            {layout.splitOn && splitPaneProps && layout.splitId !== layout.activeId && (
-              <AccountPane
-                key={'s' + layout.splitId}
-                {...splitPaneProps}
-                accounts={accounts} members={members}
-                isSplitTarget
-                mobileSection={mobileSection}
-                onAdd={() => setModal({ kind: 'add', accId: layout.splitId! })}
-                onTransfer={() => setModal({ kind: 'transfer', accId: layout.splitId! })}
-                onImport={() => setModal({ kind: 'import', accId: layout.splitId! })}
-                onEdit={tx => setModal({ kind: 'edit', tx })}
-                onDelete={handleDeleteTx}
-                onTxContext={(x, y, tx) => setTxCtx({ x, y, tx })}
-                onConfirmForecast={handleConfirmForecast}
-                onSkipForecast={handleSkipForecast}
-                onTogglePrevisions={() => handleTogglePrev(layout.splitId!)}
-              />
-            )}
+            {layout.splitOn && (() => {
+              const pickable = accounts.filter(a => !a.archive && a.id !== layout.activeId);
+              const splitToolbar = (
+                <div className="split-toolbar">
+                  <Columns2 size={15} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+                  <select
+                    className="split-toolbar-select"
+                    value={layout.splitId !== layout.activeId ? (layout.splitId ?? '') : ''}
+                    onChange={e => layout.setSplit(e.target.value)}
+                  >
+                    {!pickable.find(a => a.id === layout.splitId) && <option value="" disabled>Choisir un compte…</option>}
+                    {pickable.map(a => {
+                      const m = members.find(mm => mm.id === a.memberId);
+                      return <option key={a.id} value={a.id}>{m?.nom} — {a.nom}</option>;
+                    })}
+                  </select>
+                  <button className="icon-btn sm" onClick={layout.closeSplit} title="Fermer la vue scindée">
+                    <X size={15} />
+                  </button>
+                </div>
+              );
+
+              if (splitPaneProps && layout.splitId !== layout.activeId) {
+                return (
+                  <AccountPane
+                    key={'s' + layout.splitId}
+                    {...splitPaneProps}
+                    accounts={accounts} members={members}
+                    isSplitTarget
+                    splitToolbar={splitToolbar}
+                    mobileSection={mobileSection}
+                    onAdd={() => setModal({ kind: 'add', accId: layout.splitId! })}
+                    onTransfer={() => setModal({ kind: 'transfer', accId: layout.splitId! })}
+                    onImport={() => setModal({ kind: 'import', accId: layout.splitId! })}
+                    onEdit={tx => setModal({ kind: 'edit', tx })}
+                    onDelete={handleDeleteTx}
+                    onTxContext={(x, y, tx) => setTxCtx({ x, y, tx })}
+                    onConfirmForecast={handleConfirmForecast}
+                    onSkipForecast={handleSkipForecast}
+                    onTogglePrevisions={() => handleTogglePrev(layout.splitId!)}
+                  />
+                );
+              }
+
+              return (
+                <div className="pane is-split-target split-placeholder">
+                  <div className="pane-inner">
+                    {splitToolbar}
+                    <div className="split-placeholder-body">
+                      <Columns2 size={28} style={{ color: 'var(--text-3)' }} />
+                      <p>Choisis un compte à afficher à côté</p>
+                      <div className="split-placeholder-list">
+                        {pickable.map(a => {
+                          const m = members.find(mm => mm.id === a.memberId);
+                          return (
+                            <button key={a.id} className="btn sm" onClick={() => layout.setSplit(a.id)}>
+                              <i className="account-dot" style={{ background: `var(--m-${m?.couleur ?? 'q'})` }} />
+                              {a.nom}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -582,6 +634,30 @@ export default function App() {
             }}
             actions={ctxActions(ctx.accId)}
             onClose={() => setCtx(null)}
+          />
+        );
+      })()}
+
+      {/* Context menu — onglet */}
+      {tabCtx && (() => {
+        const a = accounts.find(x => x.id === tabCtx.accId);
+        const m = members.find(x => x.id === a?.memberId);
+        if (!a || !m) return null;
+        return (
+          <ContextMenu
+            ctx={tabCtx}
+            header={{
+              title: a.nom,
+              subtitle: m.nom + (a.banque ? ` · ${a.banque}` : ''),
+              color: `var(--m-${m.couleur})`,
+              initiales: m.initiales,
+            }}
+            actions={[
+              { icon: <Columns2 size={16} />, label: 'Ouvrir dans la vue scindée', fn: () => layout.setSplit(tabCtx.accId) },
+              { sep: true },
+              { icon: <X size={16} />, label: "Fermer l'onglet", fn: () => layout.closeTab(tabCtx.accId) },
+            ]}
+            onClose={() => setTabCtx(null)}
           />
         );
       })()}

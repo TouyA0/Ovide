@@ -10,6 +10,7 @@ interface Props {
   theme: 'light' | 'dark';
   onSelect: (id: string) => void;
   onClose: (id: string) => void;
+  onTabContext: (x: number, y: number, accId: string) => void;
   onNewTab: () => void;
   onToggleSplit: () => void;
   onToggleTheme: () => void;
@@ -17,7 +18,7 @@ interface Props {
   onInstall: () => void;
 }
 
-export function TabBar({ tabs, accounts, members, activeId, splitOn, theme, onSelect, onClose, onNewTab, onToggleSplit, onToggleTheme, canInstall, onInstall }: Props) {
+export function TabBar({ tabs, accounts, members, activeId, splitOn, theme, onSelect, onClose, onTabContext, onNewTab, onToggleSplit, onToggleTheme, canInstall, onInstall }: Props) {
   return (
     <div className="tabbar">
       <div className="tabs">
@@ -26,7 +27,8 @@ export function TabBar({ tabs, accounts, members, activeId, splitOn, theme, onSe
           if (!a) return null;
           const m = members.find(mm => mm.id === a.memberId);
           return (
-            <div key={id} className={`tab${id === activeId ? ' active' : ''}`} onClick={() => onSelect(id)}>
+            <div key={id} className={`tab${id === activeId ? ' active' : ''}`} data-ctx-menu onClick={() => onSelect(id)}
+              onContextMenu={e => { e.preventDefault(); onTabContext(e.clientX, e.clientY, id); }}>
               <i className="account-dot" style={{ background: `var(--m-${m?.couleur})` }} />
               <span className="tab-name">{a.nom}</span>
               <span className="tab-close" onClick={e => { e.stopPropagation(); onClose(id); }}><X size={13} /></span>
