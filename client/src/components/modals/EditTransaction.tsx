@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Minus, Plus, Trash2, Loader2, Paperclip, X, FileText } from 'lucide-react';
 import { Modal } from './Modal';
 import { CategoryPicker } from '../ui/CategoryPicker';
+import { DatePicker } from '../ui/DatePicker';
 import { useUploadReceipt, useDeleteReceipt } from '../../hooks/useData';
 import type { Transaction, Category, Account, Member } from '../../api/client';
 
@@ -142,7 +143,7 @@ export function EditTransactionModal({ tx, categories, accounts: _accounts, memb
 
         <div className="field-label">Détails</div>
         <div className="field"><input className="input" placeholder="Libellé" value={libelle} onChange={e => setLibelle(e.target.value)} /></div>
-        <div className="field" style={{ marginTop: 10 }}><input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+        <div className="field" style={{ marginTop: 10 }}><DatePicker value={date} onChange={setDate} ariaLabel="Date" /></div>
         <div className="field" style={{ marginTop: 10 }}>
           <textarea className="input" placeholder="Commentaire (optionnel)" value={note} onChange={e => setNote(e.target.value)}
             rows={2} style={{ resize: 'none', lineHeight: 1.5 }} />

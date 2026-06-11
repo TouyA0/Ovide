@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronDown, Loader2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Modal } from './Modal';
+import { DatePicker } from '../ui/DatePicker';
 import { today } from '../../utils/format';
 import type { Account, Member, Category } from '../../api/client';
 
@@ -124,7 +125,7 @@ export function TransferModal({ accounts, members, categories, defaultFromId, is
 
         <div className="field-label" style={{ marginTop: 14 }}>Détails</div>
         <div className="row2">
-          <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} aria-label="Date" />
+          <DatePicker value={date} onChange={setDate} ariaLabel="Date" />
           <input className="input" placeholder="Libellé" value={libelle} onChange={e => setLibelle(e.target.value)} />
         </div>
         <div className="field" style={{ marginTop: 10 }}>

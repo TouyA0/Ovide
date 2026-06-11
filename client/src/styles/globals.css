@@ -612,6 +612,40 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .input:focus, .selectx:focus { border-color: var(--accent); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.datepicker { position: relative; min-width: 0; }
+.datepicker-trigger {
+  display: flex; align-items: center; gap: 8px; cursor: pointer; font: inherit; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.datepicker-pop {
+  position: fixed; z-index: 1000;
+  width: 264px; padding: 12px; border-radius: var(--r-md); border: 1.5px solid var(--line);
+  background: var(--surface); box-shadow: var(--shadow-lg);
+}
+.dp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.dp-month { font-size: 13px; font-weight: 700; text-transform: capitalize; }
+.dp-nav {
+  width: 26px; height: 26px; border-radius: var(--r-sm); display: grid; place-items: center;
+  color: var(--text-2); background: none; border: none;
+}
+.dp-nav:hover { background: var(--surface-2); color: var(--text); }
+.dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.dp-weekdays { margin-bottom: 4px; }
+.dp-weekday { text-align: center; font-size: 11px; font-weight: 700; color: var(--text-3); padding: 2px 0; }
+.dp-day {
+  aspect-ratio: 1; display: grid; place-items: center; border-radius: var(--r-sm);
+  font-size: 12.5px; font-weight: 600; color: var(--text); background: none; border: none;
+}
+.dp-day:hover { background: var(--surface-2); }
+.dp-day.today { color: var(--accent); font-weight: 800; }
+.dp-day.on { background: var(--accent); color: #fff; }
+.dp-day.on.today { color: #fff; }
+.dp-today-btn {
+  width: 100%; margin-top: 10px; padding: 7px; border-radius: var(--r-sm); border: 1.5px solid var(--line);
+  background: var(--surface-2); color: var(--text-2); font-size: 12.5px; font-weight: 700;
+}
+.dp-today-btn:hover { border-color: var(--line-strong); color: var(--text); }
 .field { margin-bottom: 4px; }
 
 .transfer-viz { display: flex; align-items: stretch; gap: 12px; margin: 6px 0 4px; }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Minus, Plus, Loader2 } from 'lucide-react';
 import { Modal } from './Modal';
 import { CategoryPicker } from '../ui/CategoryPicker';
+import { DatePicker } from '../ui/DatePicker';
 import { today } from '../../utils/format';
 import type { Category } from '../../api/client';
 
@@ -71,7 +72,7 @@ export function AddTransactionModal({ categories, defaultAccountId, isPending, o
             rows={2} style={{ resize: 'none', lineHeight: 1.5 }} />
         </div>
         <div className="field" style={{ marginTop: 10 }}>
-          <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} aria-label="Date" />
+          <DatePicker value={date} onChange={setDate} ariaLabel="Date" />
         </div>
       </div>
       <div className="modal-foot">
