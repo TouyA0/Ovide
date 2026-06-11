@@ -7,4 +7,5 @@ data/*
 *.db-wal
 .env
 .env.*
+!.env.example
 uploads/

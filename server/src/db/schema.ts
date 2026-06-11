@@ -26,6 +26,7 @@ export const categories = sqliteTable('categories', {
   icone: text('icone').notNull(), // nom d'icône Lucide
   hue: integer('hue').notNull().default(60), // hue oklch pour la couleur
   type: text('type').notNull().default('expense'), // 'expense' | 'income'
+  position: integer('position').notNull().default(0),
 });
 
 export const transactions = sqliteTable('transactions', {

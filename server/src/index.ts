@@ -31,7 +31,8 @@ sqlite.exec(`
     nom TEXT NOT NULL,
     icone TEXT NOT NULL,
     hue INTEGER NOT NULL DEFAULT 60,
-    type TEXT NOT NULL DEFAULT 'expense'
+    type TEXT NOT NULL DEFAULT 'expense',
+    position INTEGER NOT NULL DEFAULT 0
   );
   CREATE TABLE IF NOT EXISTS accounts (
     id TEXT PRIMARY KEY,
@@ -96,6 +97,7 @@ try { sqlite.exec('ALTER TABLE recurrences ADD COLUMN position INTEGER NOT NULL 
 try { sqlite.exec("ALTER TABLE recurrences ADD COLUMN created_at TEXT NOT NULL DEFAULT '2000-01-01'"); } catch { /* déjà présente */ }
 try { sqlite.exec('ALTER TABLE transactions ADD COLUMN import_id TEXT'); } catch { /* déjà présente */ }
 try { sqlite.exec("ALTER TABLE categories ADD COLUMN type TEXT NOT NULL DEFAULT 'expense'"); } catch { /* déjà présente */ }
+try { sqlite.exec('ALTER TABLE categories ADD COLUMN position INTEGER NOT NULL DEFAULT 0'); } catch { /* déjà présente */ }
 // Marquer les catégories d'entrées connues si elles existent encore
 try { sqlite.exec("UPDATE categories SET type='income' WHERE id IN ('c_salaire','c_revenus')"); } catch { /* */ }
 try { sqlite.exec(`CREATE TABLE IF NOT EXISTS imports (

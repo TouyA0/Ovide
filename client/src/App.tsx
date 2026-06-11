@@ -26,7 +26,7 @@ import {
   useCreateTransaction, useUpdateTransaction, useDeleteTransaction,
   useCreateTransfer, useTogglePrevisions, useCreateAccount, useUpdateAccount, useCreateImport,
   useArchiveAccount, useCreateMember, useUpdateMember, useDeleteMember,
-  useCreateCategory, useUpdateCategory, useDeleteCategory,
+  useCreateCategory, useUpdateCategory, useDeleteCategory, useReorderCategories,
   useSkipRecurrence, useUnskipRecurrence, useDeleteAccount,
 } from './hooks/useData';
 import type { Transaction, ForecastItem, Member } from './api/client';
@@ -98,6 +98,7 @@ export default function App() {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const reorderCategories = useReorderCategories();
   const skipRecurrence = useSkipRecurrence();
   const unskipRecurrence = useUnskipRecurrence();
   const deleteAccount = useDeleteAccount();
@@ -466,6 +467,7 @@ export default function App() {
           onCreate={handleCreateCategory}
           onUpdate={handleUpdateCategory}
           onDelete={handleDeleteCategory}
+          onReorder={(ids) => reorderCategories.mutate(ids)}
         />
       )}
       {modal?.kind === 'member' && (

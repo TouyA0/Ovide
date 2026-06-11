@@ -280,6 +280,14 @@ export function useUpdateCategory() {
   });
 }
 
+export function useReorderCategories() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => api.reorderCategories(ids),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['categories'] }); },
+  });
+}
+
 export function useDeleteCategory() {
   const qc = useQueryClient();
   const onError = useOnError();

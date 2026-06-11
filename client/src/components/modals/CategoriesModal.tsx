@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Plus as PlusIcon, Minus, Pencil, Trash2, Check, X, ArrowLeft, Search, Loader2 } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { Plus as PlusIcon, Minus, Pencil, Trash2, Check, X, ArrowLeft, Search, Loader2, GripVertical } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import type { ComponentType } from 'react';
 import { Modal } from './Modal';
@@ -12,6 +12,7 @@ interface Props {
   onCreate: (data: Partial<Category>) => void;
   onUpdate: (id: string, data: Partial<Category>) => void;
   onDelete: (id: string) => void;
+  onReorder: (ids: string[]) => void;
 }
 
 type ViewMode = 'list' | 'edit';
@@ -212,10 +213,12 @@ function IconPicker({ value, hue, onChange }: { value: string; hue: number; onCh
 }
 
 // ── Main component ────────────────────────────────────────────────
-export function CategoriesModal({ categories, isPending, onClose, onCreate, onUpdate, onDelete }: Props) {
+export function CategoriesModal({ categories, isPending, onClose, onCreate, onUpdate, onDelete, onReorder }: Props) {
   const [view, setView] = useState<ViewMode>('list');
   const [tab, setTab] = useState<'expense' | 'income'>('expense');
   const [editing, setEditing] = useState<Category | null>(null);
+  const [localOrder, setLocalOrder] = useState<string[] | null>(null);
+  const dragId = useRef<string | null>(null);
 
   const [nom, setNom] = useState('');
   const [icone, setIcone] = useState('tag');
@@ -260,9 +263,39 @@ export function CategoriesModal({ categories, isPending, onClose, onCreate, onUp
     backToList();
   };
 
+  const serverShown = useMemo(() => categories.filter(c => (c.type ?? 'expense') === tab), [categories, tab]);
+  const shown = useMemo(() => {
+    if (!localOrder) return serverShown;
+    const map = Object.fromEntries(serverShown.map(c => [c.id, c]));
+    return localOrder.map(id => map[id]).filter(Boolean) as Category[];
+  }, [serverShown, localOrder]);
+
   // ── List view ─────────────────────────────────────────────────────
   if (view === 'list') {
-    const shown = categories.filter(c => (c.type ?? 'expense') === tab);
+    const onDragStart = (id: string) => { dragId.current = id; };
+    const onDragOver = (e: React.DragEvent, overId: string) => {
+      e.preventDefault();
+      if (!dragId.current || dragId.current === overId) return;
+      const base = localOrder ?? serverShown.map(c => c.id);
+      const from = base.indexOf(dragId.current);
+      const to = base.indexOf(overId);
+      if (from === -1 || to === -1) return;
+      const next = [...base];
+      next.splice(from, 1);
+      next.splice(to, 0, dragId.current);
+      setLocalOrder(next);
+    };
+    const onDrop = () => {
+      if (!localOrder) return;
+      // Recompose l'ordre global en remplaçant les positions de cet onglet
+      const indices: number[] = [];
+      categories.forEach((c, i) => { if ((c.type ?? 'expense') === tab) indices.push(i); });
+      const full = categories.map(c => c.id);
+      indices.forEach((idx, j) => { full[idx] = localOrder[j]; });
+      onReorder(full);
+    };
+    const onDragEnd = () => { dragId.current = null; };
+
     return (
       <Modal title="Catégories" onClose={onClose}>
         {/* Onglets Dépenses / Entrées */}
@@ -292,7 +325,17 @@ export function CategoriesModal({ categories, isPending, onClose, onCreate, onUp
           ) : (
             <ul style={{ listStyle: 'none', margin: 0, padding: '8px 0' }}>
               {shown.map(cat => (
-                <li key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 20px' }}>
+                <li key={cat.id}
+                  draggable
+                  onDragStart={() => onDragStart(cat.id)}
+                  onDragOver={e => onDragOver(e, cat.id)}
+                  onDrop={onDrop}
+                  onDragEnd={onDragEnd}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 20px' }}
+                >
+                  <span style={{ display: 'flex', color: 'var(--text-3)', cursor: 'grab', flexShrink: 0 }}>
+                    <GripVertical size={15} />
+                  </span>
                   <CategoryIcon name={cat.icone} hue={cat.hue} />
                   <span style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{cat.nom}</span>
                   <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => openEdit(cat)}>

@@ -43,6 +43,7 @@ export const api = {
   createCategory: (data: Partial<Category>) => request<{ id: string }>('/categories', { method: 'POST', body: JSON.stringify(data) }),
   updateCategory: (id: string, data: Partial<Category>) => request('/categories/' + id, { method: 'PUT', body: JSON.stringify(data) }),
   deleteCategory: (id: string) => request('/categories/' + id, { method: 'DELETE' }),
+  reorderCategories: (ids: string[]) => request('/categories/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
 
   // Recurrences
   getRecurrences: (accountId?: string) => request<Recurrence[]>('/recurrences' + (accountId ? `?accountId=${accountId}` : '')),
@@ -114,6 +115,7 @@ export interface Category {
   icone: string;
   hue: number;
   type: 'expense' | 'income';
+  position: number;
 }
 
 export interface Transaction {
