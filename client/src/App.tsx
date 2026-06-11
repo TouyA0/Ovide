@@ -49,6 +49,11 @@ type ModalState =
   | { kind: 'delete-account'; accId: string }
   | null;
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 type CtxState = { x: number; y: number; accId: string } | null;
 type MemberCtxState = { x: number; y: number; member: Member } | null;
 type TxCtxState = { x: number; y: number; tx: Transaction } | null;
@@ -63,6 +68,7 @@ export default function App() {
   const [memberCtx, setMemberCtx] = useState<MemberCtxState>(null);
   const [txCtx, setTxCtx] = useState<TxCtxState>(null);
   const [mobileSection, setMobileSection] = useState<'transactions' | 'stats'>('transactions');
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   // Data
   const membersQ = useMembers();
@@ -84,6 +90,26 @@ export default function App() {
       initTabs(accounts.slice(0, 2).map(a => a.id));
     }
   }, [accounts, tabsLength, initTabs]);
+
+  // Capture l'evenement d'installation PWA pour pouvoir le declencher via le bouton "Installer"
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      pushToast("Application installée sur l'écran d'accueil");
+    }
+    setInstallPrompt(null);
+  };
 
   // Desactive le clic droit par defaut, sauf sur les zones avec menu contextuel custom
   useEffect(() => {
@@ -380,7 +406,8 @@ export default function App() {
         onSelect={layout.setActive} onClose={layout.closeTab} onNewTab={newTab}
         onToggleSplit={() => layout.toggleSplit(accounts.find(a => a.id !== layout.activeId)?.id)}
         onToggleTheme={layout.toggleTheme}
-        onInstall={() => pushToast("Application installée sur l'écran d'accueil")}
+        canInstall={!!installPrompt}
+        onInstall={handleInstall}
       />
 
       <div className="layout">

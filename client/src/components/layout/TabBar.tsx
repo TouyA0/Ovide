@@ -13,10 +13,11 @@ interface Props {
   onNewTab: () => void;
   onToggleSplit: () => void;
   onToggleTheme: () => void;
+  canInstall: boolean;
   onInstall: () => void;
 }
 
-export function TabBar({ tabs, accounts, members, activeId, splitOn, theme, onSelect, onClose, onNewTab, onToggleSplit, onToggleTheme, onInstall }: Props) {
+export function TabBar({ tabs, accounts, members, activeId, splitOn, theme, onSelect, onClose, onNewTab, onToggleSplit, onToggleTheme, canInstall, onInstall }: Props) {
   return (
     <div className="tabbar">
       <div className="tabs">
@@ -41,7 +42,9 @@ export function TabBar({ tabs, accounts, members, activeId, splitOn, theme, onSe
         <button className="icon-btn" onClick={onToggleTheme} title="Thème clair/sombre">
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-        <button className="btn sm" onClick={onInstall} style={{ marginLeft: 4 }}><Download size={15} /> Installer</button>
+        {canInstall && (
+          <button className="btn sm" onClick={onInstall} style={{ marginLeft: 4 }}><Download size={15} /> Installer</button>
+        )}
       </div>
     </div>
   );

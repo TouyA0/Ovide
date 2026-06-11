@@ -8,8 +8,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Foyer — Gestion des comptes',
-        short_name: 'Foyer',
+        name: 'Ovide — Trésorerie',
+        short_name: 'Ovide',
         description: 'Gérez les comptes bancaires du foyer',
         theme_color: '#c2603a',
         background_color: '#fbf8f5',
