@@ -112,6 +112,27 @@ export default function App() {
     setInstallPrompt(null);
   };
 
+  // Raccourcis clavier globaux (desactives quand on saisit du texte ou qu'un modal est ouvert)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (modal) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
+
+      switch (e.key.toLowerCase()) {
+        case 'n':
+          if (layout.activeId) setModal({ kind: 'add', accId: layout.activeId });
+          break;
+        case 'v':
+          if (layout.activeId) setModal({ kind: 'transfer', accId: layout.activeId });
+          break;
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [modal, layout.activeId]);
+
   // Desactive le clic droit par defaut, sauf sur les zones avec menu contextuel custom
   useEffect(() => {
     const handler = (e: MouseEvent) => {
