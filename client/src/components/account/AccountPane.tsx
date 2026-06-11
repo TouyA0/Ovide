@@ -569,8 +569,13 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
                     <span className="tx-stamp-d">{txD}</span>
                     <span className="tx-stamp-m">{MONTHS[txM - 1]}</span>
                   </span>
-                  <span className="tx-ico" style={{ background: isTr ? 'var(--surface-2)' : `oklch(0.6 0.12 ${hue} / 0.13)`, color: isTr ? 'var(--text-2)' : `oklch(0.5 0.13 ${hue})` }}>
-                    {isTr ? <ArrowLeftRight size={17} /> : (IconComp ? <IconComp size={17} /> : null)}
+                  <span className="tx-ico" style={{ background: `oklch(0.6 0.12 ${hue} / 0.13)`, color: `oklch(0.5 0.13 ${hue})`, position: 'relative' }}>
+                    {IconComp ? <IconComp size={17} /> : (isTr ? <ArrowLeftRight size={17} /> : null)}
+                    {isTr && (
+                      <span className="tx-ico-badge">
+                        <ArrowLeftRight size={10} />
+                      </span>
+                    )}
                   </span>
                   <div className="tx-body">
                     <div className="tx-label">{t.libelle || (c ? c.nom : (isTr ? 'Virement' : 'Opération'))}</div>
@@ -582,7 +587,11 @@ function TransactionList({ account, accounts, members, categories, onEdit, onDel
                         const label = linkedAcc
                           ? `${arrow} ${linkedMember ? linkedMember.nom + ' · ' : ''}${linkedAcc.nom}`
                           : `Virement ${t.dir === 'in' ? 'reçu' : 'émis'}`;
-                        return <><span>{label}</span>{t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}</>;
+                        return <>
+                          {c && <><i className="cat-dot" style={{ background: `oklch(0.6 0.12 ${hue})` }} /><span>{c.nom}</span><span className="tx-meta-sep">·</span></>}
+                          <span>{label}</span>
+                          {t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}
+                        </>;
                       })()
                         : <><i className="cat-dot" style={{ background: `oklch(0.6 0.12 ${hue})` }} /><span>{c?.nom ?? 'Divers'}</span>{t.note && <><span className="tx-meta-sep">·</span><span className="tx-meta-note">{t.note}</span></>}{t.receiptPath && <><span className="tx-meta-sep">·</span><Paperclip size={11} style={{ flexShrink: 0, opacity: 0.6 }} /></>}</>}
                     </div>

@@ -29,6 +29,7 @@ import {
   useCreateCategory, useUpdateCategory, useDeleteCategory, useReorderCategories,
   useSkipRecurrence, useUnskipRecurrence, useDeleteAccount,
 } from './hooks/useData';
+import { api } from './api/client';
 import type { Transaction, ForecastItem, Member } from './api/client';
 
 type ModalState =
@@ -116,8 +117,34 @@ export default function App() {
   };
 
   const handleDeleteTx = async (tx: Transaction) => {
-    await deleteTx.mutateAsync(tx.id);
-    pushToast('Opération supprimée', 'trash-2');
+    if (tx.type === 'transfer' && tx.transferId) {
+      const otherLeg = tx.linkedAccountId
+        ? (await api.getTransactions(tx.linkedAccountId)).find(t => t.transferId === tx.transferId)
+        : undefined;
+      const outLeg = tx.dir === 'out' ? tx : otherLeg;
+      const inLeg = tx.dir === 'in' ? tx : otherLeg;
+      await deleteTx.mutateAsync(tx.id);
+      pushToast('Virement supprimé', 'trash-2', outLeg && inLeg ? {
+        label: 'Annuler',
+        fn: async () => {
+          await createTransfer.mutateAsync({
+            fromId: outLeg.accountId, toId: inLeg.accountId, montant: tx.montant, date: tx.date,
+            libelle: tx.libelle, note: tx.note, categorieId: outLeg.categorieId, categorieIdDest: inLeg.categorieId,
+          });
+          pushToast('Virement restauré');
+        },
+      } : undefined);
+    } else {
+      const restore = { accountId: tx.accountId, type: tx.type as 'income' | 'expense', montant: tx.montant, categorieId: tx.categorieId ?? undefined, libelle: tx.libelle, date: tx.date, note: tx.note };
+      await deleteTx.mutateAsync(tx.id);
+      pushToast('Opération supprimée', 'trash-2', {
+        label: 'Annuler',
+        fn: async () => {
+          await createTx.mutateAsync(restore);
+          pushToast('Opération restaurée');
+        },
+      });
+    }
     setModal(null);
   };
 

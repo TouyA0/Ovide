@@ -1,9 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowRight, ChevronDown, Loader2 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { Modal } from './Modal';
-import { CategoryPicker } from '../ui/CategoryPicker';
 import { today } from '../../utils/format';
 import type { Account, Member, Category } from '../../api/client';
+
+function CategoryIcon({ icone, size = 16 }: { icone: string; size?: number }) {
+  const Comp = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[
+    icone.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
+  ];
+  return Comp ? <Comp size={size} /> : null;
+}
 
 interface Props {
   accounts: Account[];
@@ -12,7 +19,7 @@ interface Props {
   defaultFromId: string;
   isPending?: boolean;
   onClose: () => void;
-  onSave: (data: { fromId: string; toId: string; montant: number; date: string; libelle: string; note: string; categorieId?: string | null }) => void;
+  onSave: (data: { fromId: string; toId: string; montant: number; date: string; libelle: string; note: string; categorieId?: string | null; categorieIdDest?: string | null }) => void;
 }
 
 export function TransferModal({ accounts, members, categories, defaultFromId, isPending, onClose, onSave }: Props) {
@@ -20,7 +27,10 @@ export function TransferModal({ accounts, members, categories, defaultFromId, is
   const otherAccounts = accounts.filter(a => a.id !== fromId);
   const [toId, setToId] = useState(otherAccounts[0]?.id ?? '');
   const [picking, setPicking] = useState(false);
-  const [catId, setCatId] = useState<string | null>(null);
+  const expenseCats = categories.filter(c => (c.type ?? 'expense') === 'expense');
+  const incomeCats = categories.filter(c => (c.type ?? 'expense') === 'income');
+  const [catId, setCatId] = useState<string | null>(expenseCats[0]?.id ?? null);
+  const [catIdDest, setCatIdDest] = useState<string | null>('cat_remboursement');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today());
   const [libelle, setLibelle] = useState('');
@@ -37,7 +47,7 @@ export function TransferModal({ accounts, members, categories, defaultFromId, is
   const from = nameOf(fromId);
   const to = nameOf(toId);
   const parsed = parseFloat(amount.replace(',', '.'));
-  const valid = parsed > 0 && !!toId && !!libelle.trim();
+  const valid = parsed > 0 && !!toId && !!libelle.trim() && !!catId && !!catIdDest;
 
   return (
     <Modal title="Virement entre comptes" onClose={onClose}>
@@ -60,38 +70,57 @@ export function TransferModal({ accounts, members, categories, defaultFromId, is
               {from.a?.nom}
             </div>
             <div className="muted" style={{ fontSize: 12 }}>{from.m?.nom}</div>
+            <div className="tv-cat-grid">
+              {expenseCats.map(c => (
+                <button key={c.id} type="button" className={`tv-cat-chip${catId === c.id ? ' on' : ''}`}
+                  style={{ '--chip-hue': c.hue } as React.CSSProperties}
+                  onClick={() => setCatId(c.id)} title={c.nom}>
+                  <span className="tv-cat-ic"><CategoryIcon icone={c.icone} size={15} /></span>
+                  <span className="tv-cat-name">{c.nom}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <ArrowRight size={22} style={{ color: 'var(--accent)', flexShrink: 0 }} />
 
-          <button className={`tv-acct tv-acct-select${picking ? ' is-open' : ''}`} onClick={() => setPicking(p => !p)}>
-            <div className="tv-lbl">Vers <ChevronDown size={11} style={{ marginLeft: 3, opacity: 0.6, transition: 'transform .15s', transform: picking ? 'rotate(180deg)' : 'none' }} /></div>
-            <div className="tv-name">
-              <i className="account-dot" style={{ background: `var(--m-${to.m?.couleur})` }} />
-              {to.a?.nom ?? '—'}
-            </div>
-            <div className="muted" style={{ fontSize: 12 }}>{to.m?.nom}</div>
-          </button>
-        </div>
-
-        {picking && (
-          <div className="tv-picker">
-            {otherAccounts.map(a => {
-              const m = members.find(mm => mm.id === a.memberId);
-              return (
-                <button key={a.id} className={`tv-option${a.id === toId ? ' on' : ''}`}
-                  onClick={() => { setToId(a.id); setPicking(false); }}>
-                  <i className="account-dot" style={{ background: `var(--m-${m?.couleur})`, width: 8, height: 8, flexShrink: 0 }} />
-                  <span className="tv-option-name">{a.nom}</span>
-                  <span className="tv-option-member">{m?.nom}</span>
+          <div className="tv-acct">
+            <button type="button" className="tv-acct-header" onClick={() => setPicking(p => !p)}>
+              <div className="tv-lbl">Vers</div>
+              <div className="tv-name">
+                <i className="account-dot" style={{ background: `var(--m-${to.m?.couleur})` }} />
+                {to.a?.nom ?? '—'}
+                <ChevronDown size={14} className="tv-acct-chevron" style={{ marginLeft: 'auto', transition: 'transform .15s', transform: picking ? 'rotate(180deg)' : 'none' }} />
+              </div>
+              <div className="muted" style={{ fontSize: 12 }}>{to.m?.nom}</div>
+            </button>
+            {picking && (
+              <div className="tv-picker">
+                {otherAccounts.map(a => {
+                  const m = members.find(mm => mm.id === a.memberId);
+                  return (
+                    <button key={a.id} className={`tv-option${a.id === toId ? ' on' : ''}`}
+                      onClick={() => { setToId(a.id); setPicking(false); }}>
+                      <i className="account-dot" style={{ background: `var(--m-${m?.couleur})`, width: 8, height: 8, flexShrink: 0 }} />
+                      <span className="tv-option-name">{a.nom}</span>
+                      <span className="tv-option-member">{m?.nom}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="tv-cat-grid">
+              {incomeCats.map(c => (
+                <button key={c.id} type="button" className={`tv-cat-chip${catIdDest === c.id ? ' on' : ''}`}
+                  style={{ '--chip-hue': c.hue } as React.CSSProperties}
+                  onClick={() => setCatIdDest(c.id)} title={c.nom}>
+                  <span className="tv-cat-ic"><CategoryIcon icone={c.icone} size={15} /></span>
+                  <span className="tv-cat-name">{c.nom}</span>
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        )}
-
-        <div className="field-label" style={{ marginTop: 14 }}>Catégorie <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optionnelle)</span></div>
-        <CategoryPicker categories={categories} selected={catId} onChange={setCatId} filter="all" />
+        </div>
 
         <div className="field-label" style={{ marginTop: 14 }}>Détails</div>
         <div className="row2">
@@ -107,7 +136,7 @@ export function TransferModal({ accounts, members, categories, defaultFromId, is
       <div className="modal-foot">
         <button className="btn ghost" onClick={onClose} disabled={!!isPending}>Annuler</button>
         <button className="btn primary" disabled={!valid || !!isPending}
-          onClick={() => valid && onSave({ fromId, toId, montant: Math.abs(parsed), date, libelle: libelle.trim(), note: note.trim(), categorieId: catId })}>
+          onClick={() => valid && onSave({ fromId, toId, montant: Math.abs(parsed), date, libelle: libelle.trim(), note: note.trim(), categorieId: catId, categorieIdDest: catIdDest })}>
           {isPending ? <Loader2 size={15} className="spin" /> : <>Transférer {valid ? parsed.toFixed(2).replace('.', ',') + ' €' : ''}</>}
         </button>
       </div>

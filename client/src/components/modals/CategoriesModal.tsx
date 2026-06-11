@@ -432,7 +432,12 @@ export function CategoriesModal({ categories, isPending, onClose, onCreate, onUp
           </button>
         </div>
 
-        {editing && (
+        {editing?.isProtected && (
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--text-3)', textAlign: 'center' }}>
+            Catégorie système — ne peut pas être supprimée.
+          </p>
+        )}
+        {editing && !editing.isProtected && (
           confirmDel ? (
             <button
               className="btn danger"

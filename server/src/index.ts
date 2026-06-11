@@ -32,7 +32,8 @@ sqlite.exec(`
     icone TEXT NOT NULL,
     hue INTEGER NOT NULL DEFAULT 60,
     type TEXT NOT NULL DEFAULT 'expense',
-    position INTEGER NOT NULL DEFAULT 0
+    position INTEGER NOT NULL DEFAULT 0,
+    protected INTEGER NOT NULL DEFAULT 0
   );
   CREATE TABLE IF NOT EXISTS accounts (
     id TEXT PRIMARY KEY,
@@ -98,6 +99,18 @@ try { sqlite.exec("ALTER TABLE recurrences ADD COLUMN created_at TEXT NOT NULL D
 try { sqlite.exec('ALTER TABLE transactions ADD COLUMN import_id TEXT'); } catch { /* déjà présente */ }
 try { sqlite.exec("ALTER TABLE categories ADD COLUMN type TEXT NOT NULL DEFAULT 'expense'"); } catch { /* déjà présente */ }
 try { sqlite.exec('ALTER TABLE categories ADD COLUMN position INTEGER NOT NULL DEFAULT 0'); } catch { /* déjà présente */ }
+try { sqlite.exec('ALTER TABLE categories ADD COLUMN protected INTEGER NOT NULL DEFAULT 0'); } catch { /* déjà présente */ }
+
+// Catégorie système "Remboursement" — utilisée par défaut côté récepteur d'un virement
+{
+  const existing = sqlite.prepare("SELECT id FROM categories WHERE id = 'cat_remboursement'").get();
+  if (!existing) {
+    const maxPos = (sqlite.prepare('SELECT COUNT(*) AS n FROM categories').get() as { n: number }).n;
+    sqlite.prepare(
+      "INSERT INTO categories (id, nom, icone, hue, type, position, protected) VALUES ('cat_remboursement', 'Remboursement', 'corner-down-left', 160, 'income', ?, 1)"
+    ).run(maxPos);
+  }
+}
 // Marquer les catégories d'entrées connues si elles existent encore
 try { sqlite.exec("UPDATE categories SET type='income' WHERE id IN ('c_salaire','c_revenus')"); } catch { /* */ }
 try { sqlite.exec(`CREATE TABLE IF NOT EXISTS imports (

@@ -137,7 +137,7 @@ export function EditTransactionModal({ tx, categories, accounts: _accounts, memb
           categories={categories}
           selected={catId}
           onChange={setCatId}
-          filter={isTransfer ? 'all' : type}
+          filter={isTransfer ? (tx.dir === 'in' ? 'income' : 'expense') : type}
         />
 
         <div className="field-label">Détails</div>

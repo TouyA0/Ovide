@@ -27,6 +27,7 @@ export const categories = sqliteTable('categories', {
   hue: integer('hue').notNull().default(60), // hue oklch pour la couleur
   type: text('type').notNull().default('expense'), // 'expense' | 'income'
   position: integer('position').notNull().default(0),
+  isProtected: integer('protected', { mode: 'boolean' }).notNull().default(false), // catégories système non supprimables
 });
 
 export const transactions = sqliteTable('transactions', {

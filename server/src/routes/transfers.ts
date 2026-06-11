@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto';
 const router = Router();
 
 router.post('/', (req, res) => {
-  const { fromId, toId, montant, date, libelle, note, categorieId } = req.body;
+  const { fromId, toId, montant, date, libelle, note, categorieId, categorieIdDest } = req.body;
   if (!fromId || !toId || !montant || !date) {
     res.status(400).json({ error: 'fromId, toId, montant et date requis' });
     return;
@@ -23,7 +23,7 @@ router.post('/', (req, res) => {
 
   db.insert(transactions).values([
     { id: 'tx_' + randomUUID().slice(0, 12), accountId: fromId, type: 'transfer', montant: amount, categorieId: categorieId ?? null, libelle: label, date, note: txNote, transferId, dir: 'out' },
-    { id: 'tx_' + randomUUID().slice(0, 12), accountId: toId,   type: 'transfer', montant: amount, categorieId: categorieId ?? null, libelle: label, date, note: txNote, transferId, dir: 'in'  },
+    { id: 'tx_' + randomUUID().slice(0, 12), accountId: toId,   type: 'transfer', montant: amount, categorieId: categorieIdDest ?? null, libelle: label, date, note: txNote, transferId, dir: 'in'  },
   ]).run();
 
   res.status(201).json({ transferId });

@@ -35,7 +35,7 @@ export const api = {
   deleteTransaction: (id: string) => request('/transactions/' + id, { method: 'DELETE' }),
 
   // Transfers
-  createTransfer: (data: { fromId: string; toId: string; montant: number; date: string; libelle: string; note: string; categorieId?: string | null }) =>
+  createTransfer: (data: { fromId: string; toId: string; montant: number; date: string; libelle: string; note: string; categorieId?: string | null; categorieIdDest?: string | null }) =>
     request<{ transferId: string }>('/transfers', { method: 'POST', body: JSON.stringify(data) }),
 
   // Categories
@@ -116,6 +116,7 @@ export interface Category {
   hue: number;
   type: 'expense' | 'income';
   position: number;
+  isProtected: boolean;
 }
 
 export interface Transaction {

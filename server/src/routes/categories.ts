@@ -36,6 +36,8 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
+  const cat = db.select().from(categories).where(eq(categories.id, req.params.id)).get();
+  if (cat?.isProtected) { res.status(400).json({ error: 'Cette catégorie est protégée et ne peut pas être supprimée' }); return; }
   db.delete(categories).where(eq(categories.id, req.params.id)).run();
   res.json({ ok: true });
 });
